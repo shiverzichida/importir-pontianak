@@ -16,11 +16,10 @@ import {
 } from '@/lib/calculator';
 import {
   buildWhatsAppUrl,
-  CATEGORY_LABELS,
   formatIdr,
   formatNumberId,
-  ORIGIN_LABELS,
 } from '@/lib/format';
+import { formatDestinationLabel } from '@/lib/i18n/dictionaries';
 import type {
   CalculatorPrefill,
   CargoCategory,
@@ -32,6 +31,7 @@ import type {
   ShippingRate,
 } from '@/lib/types';
 import { ShipIllustrationSvg } from './BrandLogo';
+import { useLanguage } from './LanguageProvider';
 
 export interface CalculatorScenarioPreset {
   originCountry: OriginCountry;
@@ -76,6 +76,7 @@ export default function CalculatorSection({
   scenarioPreset,
   onApplyToRfq,
 }: CalculatorSectionProps) {
+  const { locale, dict } = useLanguage();
   const [originCountry, setOriginCountry] = useState<OriginCountry>('china');
 
   const routeOptions = useMemo<RouteOption[]>(() => {
@@ -193,6 +194,14 @@ export default function CalculatorSection({
 
   const currency = getCurrencyForOrigin(originCountry);
 
+  const shortRouteLabel = (opt: RouteOption) => {
+    if (opt.shipping_method === 'udara') return dict.calculator.routeLabels.air;
+    if (opt.shipping_method === 'laut') return dict.calculator.routeLabels.sea;
+    return opt.unit === 'cbm'
+      ? dict.calculator.routeLabels.landCbm
+      : dict.calculator.routeLabels.landKg;
+  };
+
   const handleApplyToRfq = () => {
     if (!result || !activeRoute) return;
     const prefill: CalculatorPrefill = {
@@ -220,22 +229,30 @@ export default function CalculatorSection({
             ? result.calculatedCbm
             : undefined,
       estimated_total_idr: result.totalAllInIdr,
-      summary_note: `Simulasi kalkulator: ${ORIGIN_LABELS[originCountry]} (${activeRoute.method_label}), ${result.chargeableQty} ${result.unit.toUpperCase()}, tujuan ${destinationCity}. Estimasi total ${formatIdr(result.totalAllInIdr)}.`,
+      summary_note: dict.calculator.rfqSummaryTemplate({
+        originLabel: dict.domain.originLabels[originCountry],
+        methodLabel: shortRouteLabel(activeRoute),
+        chargeableQty: result.chargeableQty,
+        unit: result.unit.toUpperCase(),
+        destination: formatDestinationLabel(destinationCity, locale),
+        totalFormatted: formatIdr(result.totalAllInIdr),
+      }),
     };
     onApplyToRfq(prefill);
   };
 
   const whatsappDirectUrl = useMemo(() => {
     if (!result || !activeRoute) return '#';
-    const text = [
-      `Halo Admin ${settings.company_name}, saya ingin konsultasi estimasi kalkulator:`,
-      `- Asal: ${ORIGIN_LABELS[originCountry]}`,
-      `- Jalur: ${activeRoute.method_label}`,
-      `- Kategori: ${CATEGORY_LABELS[cargoCategory]}`,
-      `- Kuantitas Tertagih: ${result.chargeableQty} ${result.unit.toUpperCase()}`,
-      `- Tujuan: ${destinationCity}`,
-      `- Estimasi All-In: ${formatIdr(result.totalAllInIdr)}`,
-    ].join('\n');
+    const text = dict.calculator.waTemplate({
+      companyName: settings.company_name,
+      originLabel: dict.domain.originLabels[originCountry],
+      methodLabel: dict.domain.methodLabels[activeRoute.shipping_method],
+      categoryLabel: dict.domain.categoryLabels[cargoCategory],
+      chargeableQty: result.chargeableQty,
+      unit: result.unit.toUpperCase(),
+      destination: formatDestinationLabel(destinationCity, locale),
+      totalFormatted: formatIdr(result.totalAllInIdr),
+    });
     return buildWhatsAppUrl(settings.whatsapp_admin, text);
   }, [
     result,
@@ -245,6 +262,8 @@ export default function CalculatorSection({
     originCountry,
     cargoCategory,
     destinationCity,
+    locale,
+    dict,
   ]);
 
   const methodIcon = (method: ShippingMethod) => {
@@ -253,18 +272,12 @@ export default function CalculatorSection({
     return <Ship className="h-4 w-4" aria-hidden="true" />;
   };
 
-  const shortRouteLabel = (opt: RouteOption) => {
-    if (opt.shipping_method === 'udara') return 'Jalur Udara';
-    if (opt.shipping_method === 'laut') return 'Jalur Laut';
-    return opt.unit === 'cbm' ? 'Darat (CBM)' : 'Darat (Kg)';
-  };
-
   return (
     <div
       id="kalkulator"
       className="scroll-mt-24 rounded-2xl bg-white border border-[#DCE6F5] shadow-md overflow-hidden"
     >
-      {/* Blue gradient header matching reference */}
+      {/* Blue gradient header */}
       <div className="bg-gradient-to-r from-[#0C2B6B] to-[#1748A8] text-white px-5 py-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
@@ -272,17 +285,15 @@ export default function CalculatorSection({
           </div>
           <div>
             <h2 className="text-lg font-extrabold leading-tight">
-              Kalkulator Impor
+              {dict.calculator.title}
             </h2>
-            <p className="text-xs text-blue-100">
-              Hitung estimasi biaya impor ke Pontianak dengan mudah
-            </p>
+            <p className="text-xs text-blue-100">{dict.calculator.subtitle}</p>
           </div>
         </div>
 
         <span className="inline-flex items-center gap-1.5 rounded-full bg-gold text-ink px-3.5 py-1.5 text-xs font-extrabold shadow-sm">
           <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-          Pontianak &amp; Kalbar
+          {dict.calculator.badge}
         </span>
       </div>
 
@@ -293,26 +304,20 @@ export default function CalculatorSection({
           <div className="space-y-4">
             {/* Origin selector */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {(
-                [
-                  { id: 'china', label: 'China' },
-                  { id: 'malaysia', label: 'Malaysia / Kuching' },
-                  { id: 'singapura', label: 'Singapura' },
-                ] as const
-              ).map((item) => {
-                const active = originCountry === item.id;
+              {(['china', 'malaysia', 'singapura'] as const).map((originId) => {
+                const active = originCountry === originId;
                 return (
                   <button
-                    key={item.id}
+                    key={originId}
                     type="button"
-                    onClick={() => handleOriginChange(item.id)}
+                    onClick={() => handleOriginChange(originId)}
                     className={`min-h-[36px] px-3 rounded-lg text-xs font-bold border transition-colors ${
                       active
                         ? 'bg-navy text-white border-navy'
                         : 'bg-brand-soft text-ink border-[#D4E2F6] hover:border-brand'
                     }`}
                   >
-                    {item.label}
+                    {dict.calculator.originTabLabels[originId]}
                   </button>
                 );
               })}
@@ -350,7 +355,7 @@ export default function CalculatorSection({
                       htmlFor="calc-direct-cbm"
                       className="block text-xs font-bold text-ink mb-1.5"
                     >
-                      Volume (CBM)
+                      {dict.calculator.inputs.volumeCbm}
                     </label>
                     <input
                       id="calc-direct-cbm"
@@ -359,7 +364,7 @@ export default function CalculatorSection({
                       min="0"
                       value={directCbm}
                       onChange={(e) => setDirectCbm(e.target.value)}
-                      placeholder="cth: 0.35"
+                      placeholder={dict.calculator.inputs.volumePlaceholder}
                       className="w-full min-h-[42px] rounded-lg border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-mono text-ink"
                     />
                   </>
@@ -369,7 +374,7 @@ export default function CalculatorSection({
                       htmlFor="calc-actual-weight"
                       className="block text-xs font-bold text-ink mb-1.5"
                     >
-                      Berat Barang (Kg)
+                      {dict.calculator.inputs.weightKg}
                     </label>
                     <input
                       id="calc-actual-weight"
@@ -378,7 +383,7 @@ export default function CalculatorSection({
                       min="0"
                       value={actualWeightKg}
                       onChange={(e) => setActualWeightKg(e.target.value)}
-                      placeholder="Masukkan berat..."
+                      placeholder={dict.calculator.inputs.weightPlaceholder}
                       className="w-full min-h-[42px] rounded-lg border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-mono text-ink"
                     />
                   </>
@@ -387,37 +392,37 @@ export default function CalculatorSection({
 
               <div className="sm:col-span-7">
                 <span className="block text-xs font-bold text-ink mb-1.5">
-                  Dimensi (P × L × T cm)
+                  {dict.calculator.inputs.dimensions}
                 </span>
                 <div className="grid grid-cols-3 gap-2">
                   <input
                     id="calc-length"
                     type="number"
                     min="0"
-                    aria-label="Panjang cm"
+                    aria-label={dict.calculator.inputs.dimLengthAria}
                     value={lengthCm}
                     onChange={(e) => setLengthCm(e.target.value)}
-                    placeholder="P"
+                    placeholder={dict.calculator.inputs.dimLengthPlaceholder}
                     className="w-full min-h-[42px] rounded-lg border border-[#D4E2F6] bg-white px-2.5 py-2 text-sm font-mono text-center text-ink"
                   />
                   <input
                     id="calc-width"
                     type="number"
                     min="0"
-                    aria-label="Lebar cm"
+                    aria-label={dict.calculator.inputs.dimWidthAria}
                     value={widthCm}
                     onChange={(e) => setWidthCm(e.target.value)}
-                    placeholder="L"
+                    placeholder={dict.calculator.inputs.dimWidthPlaceholder}
                     className="w-full min-h-[42px] rounded-lg border border-[#D4E2F6] bg-white px-2.5 py-2 text-sm font-mono text-center text-ink"
                   />
                   <input
                     id="calc-height"
                     type="number"
                     min="0"
-                    aria-label="Tinggi cm"
+                    aria-label={dict.calculator.inputs.dimHeightAria}
                     value={heightCm}
                     onChange={(e) => setHeightCm(e.target.value)}
-                    placeholder="T"
+                    placeholder={dict.calculator.inputs.dimHeightPlaceholder}
                     className="w-full min-h-[42px] rounded-lg border border-[#D4E2F6] bg-white px-2.5 py-2 text-sm font-mono text-center text-ink"
                   />
                 </div>
@@ -431,18 +436,28 @@ export default function CalculatorSection({
                   htmlFor="calc-cargo-category"
                   className="block text-xs font-bold text-ink mb-1.5"
                 >
-                  Kategori Barang
+                  {dict.calculator.inputs.categoryLabel}
                 </label>
                 <select
                   id="calc-cargo-category"
                   value={cargoCategory}
-                  onChange={(e) => setCargoCategory(e.target.value as CargoCategory)}
+                  onChange={(e) =>
+                    setCargoCategory(e.target.value as CargoCategory)
+                  }
                   className="w-full min-h-[42px] rounded-lg border border-[#D4E2F6] bg-white px-3 py-2 text-xs font-semibold text-ink"
                 >
-                  <option value="general">General Cargo</option>
-                  <option value="fashion">Fashion &amp; Tekstil</option>
-                  <option value="elektronik">Elektronik / Mesin</option>
-                  <option value="khusus">Lartas / Khusus</option>
+                  <option value="general">
+                    {dict.calculator.categoryOptions.general}
+                  </option>
+                  <option value="fashion">
+                    {dict.calculator.categoryOptions.fashion}
+                  </option>
+                  <option value="elektronik">
+                    {dict.calculator.categoryOptions.elektronik}
+                  </option>
+                  <option value="khusus">
+                    {dict.calculator.categoryOptions.khusus}
+                  </option>
                 </select>
               </div>
 
@@ -451,7 +466,7 @@ export default function CalculatorSection({
                   htmlFor="calc-destination-city"
                   className="block text-xs font-bold text-ink mb-1.5"
                 >
-                  Kota Tujuan Kalbar
+                  {dict.calculator.inputs.destinationLabel}
                 </label>
                 <select
                   id="calc-destination-city"
@@ -461,7 +476,7 @@ export default function CalculatorSection({
                 >
                   {destinations.map((d) => (
                     <option key={d.id} value={d.city_name}>
-                      {d.city_name}
+                      {formatDestinationLabel(d.city_name, locale)}
                     </option>
                   ))}
                 </select>
@@ -475,8 +490,10 @@ export default function CalculatorSection({
                 className="flex items-center justify-between gap-3 text-xs font-bold text-ink"
               >
                 <span>
-                  Hitung juga modal barang ({currency}) &amp; fee titip beli{' '}
-                  {settings.sourcing_fee_percent}%
+                  {dict.calculator.inputs.includeGoodsLabel(
+                    currency,
+                    settings.sourcing_fee_percent
+                  )}
                 </span>
                 <input
                   id="calc-include-goods"
@@ -494,7 +511,7 @@ export default function CalculatorSection({
                       htmlFor="calc-goods-value"
                       className="block text-[11px] font-semibold text-slate-700 mb-1"
                     >
-                      Nilai Barang ({currency})
+                      {dict.calculator.inputs.goodsValueLabel(currency)}
                     </label>
                     <input
                       id="calc-goods-value"
@@ -510,7 +527,7 @@ export default function CalculatorSection({
                       htmlFor="calc-quantity"
                       className="block text-[11px] font-semibold text-slate-700 mb-1"
                     >
-                      Qty (Pcs)
+                      {dict.calculator.inputs.qtyLabel}
                     </label>
                     <input
                       id="calc-quantity"
@@ -531,7 +548,7 @@ export default function CalculatorSection({
             onClick={handleApplyToRfq}
             className="w-full min-h-[46px] inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold px-4 text-sm shadow-sm transition-colors"
           >
-            Ajukan Penawaran dengan Estimasi Ini
+            {dict.calculator.applyRfqBtn}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -540,7 +557,7 @@ export default function CalculatorSection({
         <div className="md:col-span-5 rounded-2xl bg-[#EEF5FF] border border-[#D4E4FA] p-5 flex flex-col justify-between text-center">
           <div className="space-y-2.5">
             <div className="text-xs font-bold text-ink">
-              Estimasi Biaya (All-In)
+              {dict.calculator.summary.estimateTitle}
             </div>
 
             {result ? (
@@ -549,21 +566,24 @@ export default function CalculatorSection({
                   {formatIdr(result.totalAllInIdr)}
                 </div>
                 <div className="text-xs font-semibold text-brand">
-                  ETA {result.etaMinDays}–{result.etaMaxDays} hari ·{' '}
-                  {formatNumberId(result.chargeableQty, 3)}{' '}
-                  {result.unit.toUpperCase()}
-                  {result.isVolumetricApplied ? ' (Volumetrik)' : ''}
+                  {dict.calculator.summary.etaText(
+                    result.etaMinDays,
+                    result.etaMaxDays,
+                    formatNumberId(result.chargeableQty, 3),
+                    result.unit.toUpperCase(),
+                    result.isVolumetricApplied
+                  )}
                 </div>
 
                 <div className="mt-3 rounded-xl bg-white/85 border border-[#D4E4FA] p-3 text-left text-[11px] space-y-1.5 text-slate-700">
                   <div className="flex justify-between gap-2">
-                    <span>Ongkir Int&apos;l + Bea Cukai:</span>
+                    <span>{dict.calculator.summary.intlShipping}</span>
                     <span className="font-mono font-bold text-ink">
                       {formatIdr(result.internationalShippingIdr)}
                     </span>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span>Penerusan Kalbar:</span>
+                    <span>{dict.calculator.summary.localForwarding}</span>
                     <span className="font-mono font-bold text-ink">
                       {result.localKalbarFeeIdr === 0
                         ? 'Rp 0'
@@ -574,21 +594,26 @@ export default function CalculatorSection({
                     <>
                       <div className="flex justify-between gap-2">
                         <span>
-                          Barang ({goodsValueForeign} {result.currency}):
+                          {dict.calculator.summary.goodsLine(
+                            goodsValueForeign,
+                            result.currency
+                          )}
                         </span>
                         <span className="font-mono font-bold text-ink">
                           {formatIdr(result.goodsValueIdr)}
                         </span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span>Fee Titip Beli:</span>
+                        <span>{dict.calculator.summary.sourcingFee}</span>
                         <span className="font-mono font-bold text-ink">
                           {formatIdr(result.sourcingFeeIdr)}
                         </span>
                       </div>
                       {result.hppPerUnitIdr !== null && (
                         <div className="flex justify-between gap-2 pt-1 border-t border-[#DCE6F5] font-bold text-brand">
-                          <span>HPP / pcs ({quantity}):</span>
+                          <span>
+                            {dict.calculator.summary.hppPerUnit(quantity)}
+                          </span>
                           <span className="font-mono">
                             {formatIdr(result.hppPerUnitIdr)}
                           </span>
@@ -596,19 +621,11 @@ export default function CalculatorSection({
                       )}
                     </>
                   )}
-                  {includeGoodsValue && (
-                    <div className="pt-1 text-[10px] text-slate-600">
-                      Kurs:{' '}
-                      {settings.fx_mode === 'manual'
-                        ? 'Manual Admin'
-                        : `${settings.fx_source} + spread`}
-                    </div>
-                  )}
                 </div>
               </>
             ) : (
               <div className="py-4 text-xs text-slate-600">
-                Tarif rute sedang diperbarui.
+                {dict.calculator.summary.updatingRates}
               </div>
             )}
           </div>
@@ -622,7 +639,7 @@ export default function CalculatorSection({
               className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-brand hover:underline"
             >
               <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-              Konsultasi Tarif via WhatsApp
+              {dict.calculator.summary.consultWaBtn}
             </a>
           </div>
         </div>

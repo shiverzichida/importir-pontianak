@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { maskCustomerName } from '@/lib/format';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+import { normalizeLocale } from '@/lib/i18n/types';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import type { PublicShipment, Shipment, TrackingEvent } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const locale = normalizeLocale(req.nextUrl.searchParams.get('lang'));
+  const dict = getDictionary(locale);
+
   try {
     const rawQuery = req.nextUrl.searchParams.get('q') || '';
     const query = rawQuery.trim();
 
     if (!query || query.length < 3) {
       return NextResponse.json(
-        { error: 'Masukkan nomor resi, marking code, atau resi supplier minimal 3 karakter.' },
+        { error: dict.api.trackingMinChars },
         { status: 400 }
       );
     }
@@ -46,7 +51,7 @@ export async function GET(req: NextRequest) {
     if (!shipment) {
       return NextResponse.json(
         {
-          error: `Resi atau Marking Code "${query}" tidak ditemukan. Periksa kembali kode Anda atau hubungi admin WhatsApp.`,
+          error: dict.api.trackingNotFound(query),
         },
         { status: 404 }
       );
@@ -61,7 +66,7 @@ export async function GET(req: NextRequest) {
     if (eventsError) {
       console.error('Tracking events fetch error:', eventsError);
       return NextResponse.json(
-        { error: 'Gagal memuat riwayat tracking.' },
+        { error: dict.api.trackingEventsError },
         { status: 500 }
       );
     }
@@ -95,7 +100,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error('Tracking API error:', err);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat memeriksa status pengiriman.' },
+      { error: dict.api.trackingServerError },
       { status: 500 }
     );
   }

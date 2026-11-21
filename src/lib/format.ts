@@ -1,3 +1,4 @@
+import type { Locale } from './i18n/types';
 import type {
   CargoCategory,
   OriginCountry,
@@ -7,6 +8,12 @@ import type {
   ServiceType,
   ShipmentStatus,
 } from './types';
+
+function toIntlLocale(locale: Locale = 'id'): string {
+  if (locale === 'en') return 'en-US';
+  if (locale === 'zh') return 'zh-CN';
+  return 'id-ID';
+}
 
 export function formatIdr(amount: number | null | undefined): string {
   if (amount === null || amount === undefined || Number.isNaN(amount)) {
@@ -26,12 +33,15 @@ export function formatNumberId(num: number | null | undefined, decimals = 2): st
   }).format(num);
 }
 
-export function formatDateWib(isoString: string | null | undefined): string {
+export function formatDateWib(
+  isoString: string | null | undefined,
+  locale: Locale = 'id'
+): string {
   if (!isoString) return '-';
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return '-';
   return (
-    new Intl.DateTimeFormat('id-ID', {
+    new Intl.DateTimeFormat(toIntlLocale(locale), {
       timeZone: 'Asia/Pontianak',
       day: '2-digit',
       month: 'short',
@@ -42,11 +52,14 @@ export function formatDateWib(isoString: string | null | undefined): string {
   );
 }
 
-export function formatDateOnly(isoString: string | null | undefined): string {
+export function formatDateOnly(
+  isoString: string | null | undefined,
+  locale: Locale = 'id'
+): string {
   if (!isoString) return '-';
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat(toIntlLocale(locale), {
     timeZone: 'Asia/Pontianak',
     day: '2-digit',
     month: 'long',

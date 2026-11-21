@@ -1,17 +1,23 @@
+'use client';
+
 import Link from 'next/link';
 import { Globe, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/lib/format';
+import { formatOperatingHours } from '@/lib/i18n/dictionaries';
 import type { PublicSettings } from '@/lib/types';
 import { BrandLogo } from './BrandLogo';
+import { useLanguage } from './LanguageProvider';
 
 interface PublicFooterProps {
   settings: PublicSettings;
 }
 
 export default function PublicFooter({ settings }: PublicFooterProps) {
+  const { locale, dict } = useLanguage();
+
   const waUrl = buildWhatsAppUrl(
     settings.whatsapp_admin,
-    `Halo Admin ${settings.company_name}, saya ingin konsultasi layanan impor ke Pontianak / Kalimantan Barat.`
+    dict.footer.waGreeting(settings.company_name)
   );
 
   return (
@@ -26,46 +32,63 @@ export default function PublicFooter({ settings }: PublicFooterProps) {
               variant="dark"
               showSubtitle
               companyName={settings.company_name}
+              subtitle={dict.brand.subtitle}
             />
             <p className="text-xs text-blue-100 leading-relaxed max-w-xs pt-1">
               {settings.company_address}
               <br />
-              {settings.operating_hours}
+              {formatOperatingHours(settings.operating_hours, locale)}
             </p>
           </div>
 
           <div className="md:col-span-3">
-            <h3 className="text-sm font-bold text-white mb-3">Quick Link</h3>
+            <h3 className="text-sm font-bold text-white mb-3">
+              {dict.footer.quickLink}
+            </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-blue-100">
               <Link href="/" className="hover:text-gold transition-colors">
-                Beranda
+                {dict.footer.links.home}
               </Link>
-              <Link href="/#layanan" className="hover:text-gold transition-colors">
-                Layanan
+              <Link
+                href="/#layanan"
+                className="hover:text-gold transition-colors"
+              >
+                {dict.footer.links.services}
               </Link>
-              <Link href="/#kalkulator" className="hover:text-gold transition-colors">
-                Kalkulator
+              <Link
+                href="/#kalkulator"
+                className="hover:text-gold transition-colors"
+              >
+                {dict.footer.links.calculator}
               </Link>
-              <Link href="/#gudang" className="hover:text-gold transition-colors">
-                Gudang Transit
+              <Link
+                href="/#gudang"
+                className="hover:text-gold transition-colors"
+              >
+                {dict.footer.links.warehouse}
               </Link>
-              <Link href="/tracking" className="hover:text-gold transition-colors">
-                Cek Resi
+              <Link
+                href="/tracking"
+                className="hover:text-gold transition-colors"
+              >
+                {dict.footer.links.tracking}
               </Link>
               <Link href="/#rfq" className="hover:text-gold transition-colors">
-                Form RFQ
+                {dict.footer.links.rfq}
               </Link>
               <Link href="/#faq" className="hover:text-gold transition-colors">
-                FAQ Impor
+                {dict.footer.links.faq}
               </Link>
               <Link href="/admin" className="hover:text-gold transition-colors">
-                Admin Panel
+                {dict.footer.links.admin}
               </Link>
             </div>
           </div>
 
           <div className="md:col-span-3 space-y-2.5">
-            <h3 className="text-sm font-bold text-white mb-3">Hubungi Kami</h3>
+            <h3 className="text-sm font-bold text-white mb-3">
+              {dict.footer.contactUs}
+            </h3>
             <a
               href={waUrl}
               target="_blank"
@@ -91,34 +114,36 @@ export default function PublicFooter({ settings }: PublicFooterProps) {
           </div>
 
           <div className="md:col-span-2 space-y-3">
-            <h3 className="text-sm font-bold text-white">Akses Cepat</h3>
+            <h3 className="text-sm font-bold text-white">
+              {dict.footer.quickAccess}
+            </h3>
             <div className="flex items-center gap-2.5">
               <a
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="WhatsApp Importir Pontianak"
+                aria-label={dict.footer.waAria}
                 className="h-9 w-9 rounded-full bg-white text-navy hover:bg-gold transition-colors inline-flex items-center justify-center"
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
               </a>
               <a
                 href="mailto:info@importirpontianak.id"
-                aria-label="Email Importir Pontianak"
+                aria-label={dict.footer.emailAria}
                 className="h-9 w-9 rounded-full bg-white text-navy hover:bg-gold transition-colors inline-flex items-center justify-center"
               >
                 <Mail className="h-4 w-4" aria-hidden="true" />
               </a>
               <Link
                 href="/tracking"
-                aria-label="Halaman Live Tracking"
+                aria-label={dict.footer.trackingAria}
                 className="h-9 w-9 rounded-full bg-white text-navy hover:bg-gold transition-colors inline-flex items-center justify-center"
               >
                 <Globe className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/#gudang"
-                aria-label="Lokasi Gudang Transit"
+                aria-label={dict.footer.warehouseAria}
                 className="h-9 w-9 rounded-full bg-white text-navy hover:bg-gold transition-colors inline-flex items-center justify-center"
               >
                 <MapPin className="h-4 w-4" aria-hidden="true" />
@@ -129,12 +154,12 @@ export default function PublicFooter({ settings }: PublicFooterProps) {
 
         <div className="pt-5 flex flex-wrap items-center justify-between gap-3 text-xs text-blue-100">
           <span>
-            © {new Date().getFullYear()} {settings.company_name}. Semua Hak
-            Dilindungi.
+            © {new Date().getFullYear()} {settings.company_name}.{' '}
+            {dict.footer.allRightsReserved}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
-            Pontianak, Kalimantan Barat
+            {dict.footer.locationLabel}
           </span>
         </div>
       </div>

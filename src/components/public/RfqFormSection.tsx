@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { formatIdr } from '@/lib/format';
+import { formatDestinationLabel } from '@/lib/i18n/dictionaries';
 import type {
   CalculatorPrefill,
   CargoCategory,
@@ -23,6 +24,7 @@ import type {
   RfqShippingMethod,
   ServiceType,
 } from '@/lib/types';
+import { useLanguage } from './LanguageProvider';
 
 interface RfqFormSectionProps {
   destinations: KalbarDestination[];
@@ -37,6 +39,7 @@ export default function RfqFormSection({
   serviceTrigger,
   onClearPrefill,
 }: RfqFormSectionProps) {
+  const { locale, dict } = useLanguage();
   const [serviceType, setServiceType] = useState<ServiceType>('titip_beli');
   const [customerName, setCustomerName] = useState('');
   const [customerWhatsapp, setCustomerWhatsapp] = useState('');
@@ -122,12 +125,12 @@ export default function RfqFormSection({
       const res = await fetch('/api/uploads', { method: 'POST', body: fd });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
-        setErrorMsg(data.error || 'Gagal mengunggah foto.');
+        setErrorMsg(data.error || dict.rfq.errors.uploadFail);
       } else {
         setPhotoUrl(data.url);
       }
     } catch {
-      setErrorMsg('Gagal mengunggah foto produk.');
+      setErrorMsg(dict.rfq.errors.uploadFail);
     } finally {
       setUploadingPhoto(false);
     }
@@ -143,6 +146,7 @@ export default function RfqFormSection({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          locale,
           service_type: serviceType,
           customer_name: customerName,
           customer_whatsapp: customerWhatsapp,
@@ -176,7 +180,7 @@ export default function RfqFormSection({
       };
 
       if (!res.ok || !data.order || !data.whatsapp_url) {
-        setErrorMsg(data.error || 'Gagal mengirim pengajuan RFQ.');
+        setErrorMsg(data.error || dict.rfq.errors.submitFail);
       } else {
         setSubmittedResult({
           order: data.order,
@@ -184,7 +188,7 @@ export default function RfqFormSection({
         });
       }
     } catch {
-      setErrorMsg('Koneksi bermasalah. Silakan coba beberapa saat lagi.');
+      setErrorMsg(dict.rfq.errors.networkFail);
     } finally {
       setSubmitting(false);
     }
@@ -208,16 +212,17 @@ export default function RfqFormSection({
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mb-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold text-brand mb-1">
-            <span className="w-6 h-0.5 bg-brand rounded-full" aria-hidden="true" />
-            Request For Quotation (RFQ)
+            <span
+              className="w-6 h-0.5 bg-brand rounded-full"
+              aria-hidden="true"
+            />
+            {dict.rfq.eyebrow}
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
-            Ajukan Titip Beli, Booking Gudang, atau Transfer Valas
+            {dict.rfq.heading}
           </h2>
           <p className="mt-2 text-slate-700 text-sm sm:text-base">
-            Tempelkan tautan produk (1688, Taobao, Alibaba, Shopee MY) atau
-            unggah foto barang. Data otomatis tercatat dan langsung terhubung ke
-            WhatsApp admin Pontianak.
+            {dict.rfq.subtitle}
           </p>
         </div>
 
@@ -228,19 +233,20 @@ export default function RfqFormSection({
             </div>
             <div>
               <span className="text-xs font-bold text-wa">
-                Pengajuan Berhasil Disimpan
+                {dict.rfq.success.badge}
               </span>
               <h3 className="text-2xl font-extrabold text-ink mt-1">
-                Terima Kasih, {submittedResult.order.customer_name}!
+                {dict.rfq.success.thankYou(submittedResult.order.customer_name)}
               </h3>
               <p className="text-sm text-slate-700 mt-1">
-                Kode RFQ Anda telah tercatat di sistem kami. Klik tombol
-                WhatsApp di bawah untuk verifikasi penawaran dengan admin.
+                {dict.rfq.success.desc}
               </p>
             </div>
 
             <div className="inline-flex items-center gap-3 rounded-xl bg-white border border-[#DCE6F5] px-5 py-3 shadow-sm">
-              <span className="text-xs text-slate-700 font-semibold">Kode RFQ:</span>
+              <span className="text-xs text-slate-700 font-semibold">
+                {dict.rfq.success.codeLabel}
+              </span>
               <span className="font-mono font-extrabold text-lg text-ink">
                 {submittedResult.order.rfq_code}
               </span>
@@ -254,7 +260,9 @@ export default function RfqFormSection({
                 className="min-h-[36px] px-2 text-xs font-bold text-brand hover:underline inline-flex items-center gap-1"
               >
                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                {copiedRfqCode ? 'Disalin' : 'Salin'}
+                {copiedRfqCode
+                  ? dict.rfq.success.copied
+                  : dict.rfq.success.copy}
               </button>
             </div>
 
@@ -266,14 +274,14 @@ export default function RfqFormSection({
                 className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-wa hover:bg-wa-dark text-white font-bold px-6 text-sm shadow-sm transition-colors"
               >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
-                Kirim Pengajuan ke WhatsApp Admin
+                {dict.rfq.success.sendWaBtn}
               </a>
               <button
                 type="button"
                 onClick={resetForm}
                 className="w-full sm:w-auto min-h-[48px] rounded-full border border-[#DCE6F5] bg-white hover:bg-ice text-ink font-semibold px-5 text-sm transition-colors"
               >
-                Buat Pengajuan Baru
+                {dict.rfq.success.newOrderBtn}
               </button>
             </div>
           </div>
@@ -285,83 +293,73 @@ export default function RfqFormSection({
             <div className="bg-gradient-to-r from-[#0C2B6B] to-[#1748A8] text-white px-6 py-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-white" aria-hidden="true" />
+                  <FileText
+                    className="h-4 w-4 text-white"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
-                  <div className="font-bold text-sm">Formulir Permintaan Penawaran</div>
+                  <div className="font-bold text-sm">
+                    {dict.rfq.formHeader.title}
+                  </div>
                   <div className="text-xs text-blue-100">
-                    Semua data dikirim ke tim Pontianak dalam hitungan detik
+                    {dict.rfq.formHeader.subtitle}
                   </div>
                 </div>
               </div>
               <span className="hidden sm:inline-block rounded-full bg-gold text-ink px-3 py-1 text-xs font-extrabold">
-                Respon Cepat via WA
+                {dict.rfq.formHeader.fastReplyBadge}
               </span>
             </div>
 
             <div className="p-5 sm:p-8 space-y-6">
               <div>
                 <p className="block text-sm font-bold text-ink mb-2.5">
-                  Pilih Jenis Layanan
+                  {dict.rfq.serviceSelector.label}
                 </p>
                 <div
                   role="radiogroup"
-                  aria-label="Pilih jenis layanan RFQ"
+                  aria-label={dict.rfq.serviceSelector.ariaLabel}
                   className="grid grid-cols-1 sm:grid-cols-3 gap-3"
                 >
-                  {(
-                    [
-                      {
-                        id: 'titip_beli',
-                        title: 'Titip Beli / Sourcing',
-                        desc: 'Kami belikan dari 1688, Taobao, Alibaba & QC gudang.',
-                      },
-                      {
-                        id: 'forwarder',
-                        title: 'Forwarder (Kirim Saja)',
-                        desc: 'Anda sudah punya supplier, kirim ke gudang kami.',
-                      },
-                      {
-                        id: 'transfer_valas',
-                        title: 'Jasa Transfer RMB / MYR',
-                        desc: 'Titip bayar invoice supplier via Alipay atau bank.',
-                      },
-                    ] as const
-                  ).map((tab) => {
-                    const active = serviceType === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        onClick={() => {
-                          setServiceType(tab.id);
-                          if (tab.id === 'transfer_valas') {
-                            setShippingMethod('transfer_only');
-                          } else if (shippingMethod === 'transfer_only') {
-                            setShippingMethod(
-                              originCountry === 'malaysia' ? 'darat' : 'laut'
-                            );
-                          }
-                        }}
-                        className={`text-left min-h-[72px] p-4 rounded-xl border transition-colors ${
-                          active
-                            ? 'bg-brand text-white border-brand shadow-sm'
-                            : 'bg-ice text-ink border-[#DCE6F5] hover:border-brand'
-                        }`}
-                      >
-                        <div className="font-bold text-sm">{tab.title}</div>
-                        <div
-                          className={`text-xs mt-1 ${
-                            active ? 'text-blue-100' : 'text-slate-600'
+                  {(['titip_beli', 'forwarder', 'transfer_valas'] as const).map(
+                    (tabId) => {
+                      const active = serviceType === tabId;
+                      const tabCopy = dict.rfq.serviceSelector.items[tabId];
+                      return (
+                        <button
+                          key={tabId}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => {
+                            setServiceType(tabId);
+                            if (tabId === 'transfer_valas') {
+                              setShippingMethod('transfer_only');
+                            } else if (shippingMethod === 'transfer_only') {
+                              setShippingMethod(
+                                originCountry === 'malaysia' ? 'darat' : 'laut'
+                              );
+                            }
+                          }}
+                          className={`text-left min-h-[72px] p-4 rounded-xl border transition-colors ${
+                            active
+                              ? 'bg-brand text-white border-brand shadow-sm'
+                              : 'bg-ice text-ink border-[#DCE6F5] hover:border-brand'
                           }`}
                         >
-                          {tab.desc}
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className="font-bold text-sm">{tabCopy.title}</div>
+                          <div
+                            className={`text-xs mt-1 ${
+                              active ? 'text-blue-100' : 'text-slate-600'
+                            }`}
+                          >
+                            {tabCopy.desc}
+                          </div>
+                        </button>
+                      );
+                    }
+                  )}
                 </div>
               </div>
 
@@ -369,10 +367,11 @@ export default function RfqFormSection({
                 <div className="flex items-start justify-between gap-3 rounded-xl bg-[#EEF5FF] border border-[#BBD2F8] px-4 py-3 text-xs text-ink">
                   <div>
                     <strong className="block text-brand">
-                      Estimasi dari Kalkulator Diterapkan:
+                      {dict.rfq.prefillBanner.title}
                     </strong>
                     <span>
-                      {prefill.summary_note} (Estimasi Total:{' '}
+                      {prefill.summary_note} (
+                      {dict.rfq.prefillBanner.estimateTotalLabel}{' '}
                       <strong>{formatIdr(prefill.estimated_total_idr)}</strong>)
                     </span>
                   </div>
@@ -383,7 +382,7 @@ export default function RfqFormSection({
                       setEstimatedTotalIdr(null);
                     }}
                     className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded-lg text-brand hover:bg-white shrink-0"
-                    aria-label="Hapus estimasi kalkulator"
+                    aria-label={dict.rfq.prefillBanner.removeAria}
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -396,7 +395,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-customer-name"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Nama Lengkap *
+                    {dict.rfq.fields.fullNameLabel}
                   </label>
                   <input
                     id="rfq-customer-name"
@@ -404,7 +403,7 @@ export default function RfqFormSection({
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="cth: Budi Santoso"
+                    placeholder={dict.rfq.fields.fullNamePlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2 text-sm text-ink"
                   />
                 </div>
@@ -413,7 +412,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-whatsapp"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Nomor WhatsApp Aktif *
+                    {dict.rfq.fields.whatsappLabel}
                   </label>
                   <input
                     id="rfq-whatsapp"
@@ -421,7 +420,7 @@ export default function RfqFormSection({
                     required
                     value={customerWhatsapp}
                     onChange={(e) => setCustomerWhatsapp(e.target.value)}
-                    placeholder="cth: 081256789012"
+                    placeholder={dict.rfq.fields.whatsappPlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2 text-sm font-mono text-ink"
                   />
                 </div>
@@ -430,14 +429,14 @@ export default function RfqFormSection({
                     htmlFor="rfq-company"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Nama Toko / Usaha (Opsional)
+                    {dict.rfq.fields.companyLabel}
                   </label>
                   <input
                     id="rfq-company"
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="cth: Toko Borneo Jaya"
+                    placeholder={dict.rfq.fields.companyPlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2 text-sm text-ink"
                   />
                 </div>
@@ -449,17 +448,25 @@ export default function RfqFormSection({
                     htmlFor="rfq-origin"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Negara Asal *
+                    {dict.rfq.fields.originLabel}
                   </label>
                   <select
                     id="rfq-origin"
                     value={originCountry}
-                    onChange={(e) => handleOriginChange(e.target.value as OriginCountry)}
+                    onChange={(e) =>
+                      handleOriginChange(e.target.value as OriginCountry)
+                    }
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm text-ink"
                   >
-                    <option value="china">China (Guangzhou / Yiwu)</option>
-                    <option value="malaysia">Malaysia / Kuching</option>
-                    <option value="singapura">Singapura</option>
+                    <option value="china">
+                      {dict.rfq.fields.originOptions.china}
+                    </option>
+                    <option value="malaysia">
+                      {dict.rfq.fields.originOptions.malaysia}
+                    </option>
+                    <option value="singapura">
+                      {dict.rfq.fields.originOptions.singapura}
+                    </option>
                   </select>
                 </div>
 
@@ -469,7 +476,7 @@ export default function RfqFormSection({
                       htmlFor="rfq-method"
                       className="block text-xs font-bold text-ink mb-1.5"
                     >
-                      Jalur Pengiriman *
+                      {dict.rfq.fields.methodLabel}
                     </label>
                     <select
                       id="rfq-method"
@@ -479,10 +486,16 @@ export default function RfqFormSection({
                       }
                       className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm text-ink"
                     >
-                      <option value="udara">Jalur Udara (Cepat)</option>
-                      <option value="laut">Jalur Laut LCL (Hemat CBM)</option>
+                      <option value="udara">
+                        {dict.rfq.fields.methodOptions.udara}
+                      </option>
+                      <option value="laut">
+                        {dict.rfq.fields.methodOptions.laut}
+                      </option>
                       {originCountry === 'malaysia' && (
-                        <option value="darat">Jalur Darat Entikong / Aruk</option>
+                        <option value="darat">
+                          {dict.rfq.fields.methodOptions.darat}
+                        </option>
                       )}
                     </select>
                   </div>
@@ -493,18 +506,28 @@ export default function RfqFormSection({
                     htmlFor="rfq-category"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Kategori Barang
+                    {dict.rfq.fields.categoryLabel}
                   </label>
                   <select
                     id="rfq-category"
                     value={cargoCategory}
-                    onChange={(e) => setCargoCategory(e.target.value as CargoCategory)}
+                    onChange={(e) =>
+                      setCargoCategory(e.target.value as CargoCategory)
+                    }
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm text-ink"
                   >
-                    <option value="general">General Cargo</option>
-                    <option value="fashion">Fashion &amp; Aksesoris</option>
-                    <option value="elektronik">Elektronik / Mesin</option>
-                    <option value="khusus">Lartas / Khusus</option>
+                    <option value="general">
+                      {dict.rfq.fields.categoryOptions.general}
+                    </option>
+                    <option value="fashion">
+                      {dict.rfq.fields.categoryOptions.fashion}
+                    </option>
+                    <option value="elektronik">
+                      {dict.rfq.fields.categoryOptions.elektronik}
+                    </option>
+                    <option value="khusus">
+                      {dict.rfq.fields.categoryOptions.khusus}
+                    </option>
                   </select>
                 </div>
 
@@ -513,7 +536,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-destination"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Kota Tujuan Kalbar *
+                    {dict.rfq.fields.destinationLabel}
                   </label>
                   <select
                     id="rfq-destination"
@@ -523,7 +546,7 @@ export default function RfqFormSection({
                   >
                     {destinations.map((d) => (
                       <option key={d.id} value={d.city_name}>
-                        {d.city_name}
+                        {formatDestinationLabel(d.city_name, locale)}
                       </option>
                     ))}
                   </select>
@@ -536,7 +559,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-product-name"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Nama Barang / Deskripsi Order *
+                    {dict.rfq.fields.productNameLabel}
                   </label>
                   <input
                     id="rfq-product-name"
@@ -544,7 +567,7 @@ export default function RfqFormSection({
                     required
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
-                    placeholder="cth: Mesin Press Cup Otomatis / Tas Wanita 50 pcs"
+                    placeholder={dict.rfq.fields.productNamePlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2 text-sm text-ink"
                   />
                 </div>
@@ -553,14 +576,14 @@ export default function RfqFormSection({
                     htmlFor="rfq-product-url"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Link Produk (1688 / Taobao / Alibaba / Shopee MY)
+                    {dict.rfq.fields.productUrlLabel}
                   </label>
                   <input
                     id="rfq-product-url"
                     type="url"
                     value={productUrl}
                     onChange={(e) => setProductUrl(e.target.value)}
-                    placeholder="https://detail.1688.com/offer/..."
+                    placeholder={dict.rfq.fields.productUrlPlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2 text-sm text-ink"
                   />
                 </div>
@@ -572,18 +595,28 @@ export default function RfqFormSection({
                     htmlFor="rfq-currency"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Mata Uang
+                    {dict.rfq.fields.currencyLabel}
                   </label>
                   <select
                     id="rfq-currency"
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                    onChange={(e) =>
+                      setCurrency(e.target.value as CurrencyCode)
+                    }
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-mono text-ink"
                   >
-                    <option value="RMB">RMB (Yuan)</option>
-                    <option value="MYR">MYR (Ringgit)</option>
-                    <option value="SGD">SGD</option>
-                    <option value="IDR">IDR</option>
+                    <option value="RMB">
+                      {dict.rfq.fields.currencyOptions.RMB}
+                    </option>
+                    <option value="MYR">
+                      {dict.rfq.fields.currencyOptions.MYR}
+                    </option>
+                    <option value="SGD">
+                      {dict.rfq.fields.currencyOptions.SGD}
+                    </option>
+                    <option value="IDR">
+                      {dict.rfq.fields.currencyOptions.IDR}
+                    </option>
                   </select>
                 </div>
                 <div>
@@ -591,7 +624,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-goods-value"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Nilai Barang / Transfer
+                    {dict.rfq.fields.goodsValueLabel}
                   </label>
                   <input
                     id="rfq-goods-value"
@@ -600,7 +633,7 @@ export default function RfqFormSection({
                     min="0"
                     value={estimatedGoodsValue}
                     onChange={(e) => setEstimatedGoodsValue(e.target.value)}
-                    placeholder="cth: 1500"
+                    placeholder={dict.rfq.fields.goodsValuePlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-mono text-ink"
                   />
                 </div>
@@ -609,7 +642,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-quantity"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Qty (Pcs)
+                    {dict.rfq.fields.qtyLabel}
                   </label>
                   <input
                     id="rfq-quantity"
@@ -625,7 +658,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-weight"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Perkiraan Berat (Kg)
+                    {dict.rfq.fields.weightLabel}
                   </label>
                   <input
                     id="rfq-weight"
@@ -634,7 +667,7 @@ export default function RfqFormSection({
                     min="0"
                     value={estimatedWeightKg}
                     onChange={(e) => setEstimatedWeightKg(e.target.value)}
-                    placeholder="opsional"
+                    placeholder={dict.rfq.fields.optionalPlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-mono text-ink"
                   />
                 </div>
@@ -643,7 +676,7 @@ export default function RfqFormSection({
                     htmlFor="rfq-cbm"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Perkiraan Vol (CBM)
+                    {dict.rfq.fields.cbmLabel}
                   </label>
                   <input
                     id="rfq-cbm"
@@ -652,7 +685,7 @@ export default function RfqFormSection({
                     min="0"
                     value={estimatedCbm}
                     onChange={(e) => setEstimatedCbm(e.target.value)}
-                    placeholder="opsional"
+                    placeholder={dict.rfq.fields.optionalPlaceholder}
                     className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-mono text-ink"
                   />
                 </div>
@@ -664,20 +697,20 @@ export default function RfqFormSection({
                     htmlFor="rfq-photo-input"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Unggah Foto Produk / Invoice (Opsional, Maks 3 MB)
+                    {dict.rfq.fields.photoLabel}
                   </label>
                   {photoUrl ? (
                     <div className="rounded-xl border border-[#D4E2F6] bg-ice p-2.5 flex items-center gap-3">
                       <img
                         src={photoUrl}
-                        alt="Pratinjau foto produk yang diunggah"
+                        alt={dict.rfq.fields.photoAlt}
                         width={64}
                         height={64}
                         className="h-16 w-16 rounded-lg object-cover border border-[#DCE6F5] shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold text-wa">
-                          Foto terunggah siap dikirim
+                          {dict.rfq.fields.photoUploaded}
                         </div>
                         <div className="text-xs text-slate-600 truncate">
                           {photoUrl}
@@ -687,7 +720,7 @@ export default function RfqFormSection({
                         type="button"
                         onClick={() => setPhotoUrl(null)}
                         className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-rose-700 hover:bg-rose-50 rounded-lg"
-                        aria-label="Hapus foto produk"
+                        aria-label={dict.rfq.fields.photoDeleteAria}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
@@ -704,7 +737,7 @@ export default function RfqFormSection({
                             aria-hidden="true"
                           />
                           <span className="text-xs font-semibold text-ink">
-                            Mengunggah foto...
+                            {dict.rfq.fields.photoUploading}
                           </span>
                         </>
                       ) : (
@@ -714,7 +747,7 @@ export default function RfqFormSection({
                             aria-hidden="true"
                           />
                           <span className="text-xs font-semibold text-ink">
-                            Pilih Foto JPG / PNG / WebP (Maks 3 MB)
+                            {dict.rfq.fields.photoPick}
                           </span>
                         </>
                       )}
@@ -734,14 +767,14 @@ export default function RfqFormSection({
                     htmlFor="rfq-notes"
                     className="block text-xs font-bold text-ink mb-1.5"
                   >
-                    Catatan Tambahan (Varian, Resi Lokal, atau Permintaan Khusus)
+                    {dict.rfq.fields.notesLabel}
                   </label>
                   <textarea
                     id="rfq-notes"
                     rows={3}
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
-                    placeholder="Contoh: Warna hitam 20 pcs, putih 30 pcs. Mohon QC sebelum berangkat."
+                    placeholder={dict.rfq.fields.notesPlaceholder}
                     className="w-full rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2.5 text-sm text-ink"
                   />
                 </div>
@@ -758,8 +791,7 @@ export default function RfqFormSection({
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 <p className="text-xs text-slate-600">
-                  Pengajuan gratis. Anda meninjau penawaran resmi all-in sebelum
-                  pembayaran DP.
+                  {dict.rfq.footerDisclaimer}
                 </p>
                 <button
                   type="submit"
@@ -768,13 +800,16 @@ export default function RfqFormSection({
                 >
                   {submitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      Mengirim RFQ...
+                      <Loader2
+                        className="h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                      {dict.rfq.submitLoading}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" aria-hidden="true" />
-                      Kirim Pengajuan &amp; Lanjut WhatsApp
+                      {dict.rfq.submitIdle}
                     </>
                   )}
                 </button>

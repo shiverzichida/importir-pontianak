@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { LanguageProvider } from '@/components/public/LanguageProvider';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+import { LOCALE_COOKIE_NAME, normalizeLocale } from '@/lib/i18n/types';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -15,25 +19,36 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title:
-    'Importir Pontianak | Jasa Impor, Sourcing & Forwarder China, Malaysia, Singapura ke Kalbar',
-  description:
-    'Platform jasa titip beli (1688, Taobao, Alibaba), forwarder door-to-door, dan transfer valas dari China, Malaysia/Kuching, dan Singapura langsung ke Pontianak & seluruh Kalimantan Barat.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const locale = normalizeLocale(cookieStore.get(LOCALE_COOKIE_NAME)?.value);
+  const dict = getDictionary(locale);
 
-export default function RootLayout({
+  return {
+    title: dict.meta.title,
+    description: dict.meta.description,
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const initialLocale = normalizeLocale(
+    cookieStore.get(LOCALE_COOKIE_NAME)?.value
+  );
+
   return (
     <html
-      lang="id"
+      lang={initialLocale === 'zh' ? 'zh-CN' : initialLocale}
       className={`${plusJakarta.variable} ${ibmPlexMono.variable}`}
     >
       <body className="font-sans antialiased bg-paper text-slate-900">
-        {children}
+        <LanguageProvider initialLocale={initialLocale}>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

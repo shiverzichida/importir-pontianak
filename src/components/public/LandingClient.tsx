@@ -27,6 +27,7 @@ import CalculatorSection, {
   type CalculatorScenarioPreset,
 } from './CalculatorSection';
 import FaqSection from './FaqSection';
+import { useLanguage } from './LanguageProvider';
 import Navbar from './Navbar';
 import PublicFooter from './PublicFooter';
 import RfqFormSection from './RfqFormSection';
@@ -36,7 +37,73 @@ interface LandingClientProps {
   config: PublicConfig;
 }
 
+const SCENARIO_SPECS: Array<{
+  id: 'cn-lcl' | 'my-darat' | 'sg-udara';
+  preset: Omit<CalculatorScenarioPreset, 'nonce'>;
+}> = [
+  {
+    id: 'cn-lcl',
+    preset: {
+      originCountry: 'china',
+      shippingMethod: 'laut',
+      unit: 'cbm',
+      cargoCategory: 'elektronik',
+      actualWeightKg: '42',
+      directCbm: '0.35',
+      lengthCm: '',
+      widthCm: '',
+      heightCm: '',
+      colliCount: '1',
+      destinationCity: 'Pontianak (Kurir Dalam Kota)',
+      includeGoodsValue: false,
+      goodsValueForeign: '0',
+      quantity: '1',
+    },
+  },
+  {
+    id: 'my-darat',
+    preset: {
+      originCountry: 'malaysia',
+      shippingMethod: 'darat',
+      unit: 'kg',
+      cargoCategory: 'fashion',
+      actualWeightKg: '25',
+      directCbm: '0',
+      lengthCm: '',
+      widthCm: '',
+      heightCm: '',
+      colliCount: '1',
+      destinationCity: 'Singkawang',
+      includeGoodsValue: false,
+      goodsValueForeign: '0',
+      quantity: '1',
+    },
+  },
+  {
+    id: 'sg-udara',
+    preset: {
+      originCountry: 'singapura',
+      shippingMethod: 'udara',
+      unit: 'kg',
+      cargoCategory: 'elektronik',
+      actualWeightKg: '4',
+      directCbm: '0',
+      lengthCm: '',
+      widthCm: '',
+      heightCm: '',
+      colliCount: '1',
+      destinationCity: 'Pontianak (Ambil di Gudang)',
+      includeGoodsValue: false,
+      goodsValueForeign: '0',
+      quantity: '1',
+    },
+  },
+];
+
+const WORKFLOW_ICONS = [Link2, FileText, PackageCheck, CheckCircle2] as const;
+
 export default function LandingClient({ config }: LandingClientProps) {
+  const { dict } = useLanguage();
   const router = useRouter();
   const [quickResi, setQuickResi] = useState('');
   const [prefill, setPrefill] = useState<CalculatorPrefill | null>(null);
@@ -79,85 +146,7 @@ export default function LandingClient({ config }: LandingClientProps) {
   };
 
   const liveScenarios = useMemo(() => {
-    const specs: Array<{
-      id: string;
-      title: string;
-      routeSummary: string;
-      detail: string;
-      preset: Omit<CalculatorScenarioPreset, 'nonce'>;
-    }> = [
-      {
-        id: 'cn-lcl',
-        title: 'Mesin Usaha & Kemasan dari Yiwu / Guangzhou',
-        routeSummary: 'China Laut LCL · 0,35 CBM · Elektronik → Pontianak',
-        detail:
-          'Sudah termasuk kepabeanan laut hingga Pontianak dan antar dalam kota.',
-        preset: {
-          originCountry: 'china',
-          shippingMethod: 'laut',
-          unit: 'cbm',
-          cargoCategory: 'elektronik',
-          actualWeightKg: '42',
-          directCbm: '0.35',
-          lengthCm: '',
-          widthCm: '',
-          heightCm: '',
-          colliCount: '1',
-          destinationCity: 'Pontianak (Kurir Dalam Kota)',
-          includeGoodsValue: false,
-          goodsValueForeign: '0',
-          quantity: '1',
-        },
-      },
-      {
-        id: 'my-darat',
-        title: 'Belanja Grosir Fashion Lintas Batas Kuching',
-        routeSummary: 'Malaysia Darat Entikong/Aruk · 25 Kg · Fashion → Singkawang',
-        detail:
-          'Jalur darat cepat 2–4 hari kerja dari Sarawak langsung diteruskan ke Singkawang.',
-        preset: {
-          originCountry: 'malaysia',
-          shippingMethod: 'darat',
-          unit: 'kg',
-          cargoCategory: 'fashion',
-          actualWeightKg: '25',
-          directCbm: '0',
-          lengthCm: '',
-          widthCm: '',
-          heightCm: '',
-          colliCount: '1',
-          destinationCity: 'Singkawang',
-          includeGoodsValue: false,
-          goodsValueForeign: '0',
-          quantity: '1',
-        },
-      },
-      {
-        id: 'sg-udara',
-        title: 'Sparepart Teknik Ekspres dari Singapura',
-        routeSummary: 'Singapura Udara · 4 Kg · Elektronik → Gudang Pontianak',
-        detail:
-          'Pengiriman udara cepat dari gudang Tuas Singapura siap ambil di Pontianak.',
-        preset: {
-          originCountry: 'singapura',
-          shippingMethod: 'udara',
-          unit: 'kg',
-          cargoCategory: 'elektronik',
-          actualWeightKg: '4',
-          directCbm: '0',
-          lengthCm: '',
-          widthCm: '',
-          heightCm: '',
-          colliCount: '1',
-          destinationCity: 'Pontianak (Ambil di Gudang)',
-          includeGoodsValue: false,
-          goodsValueForeign: '0',
-          quantity: '1',
-        },
-      },
-    ];
-
-    return specs.map((item) => {
+    return SCENARIO_SPECS.map((item) => {
       const calc = calculateImportEstimate(
         {
           originCountry: item.preset.originCountry,
@@ -179,9 +168,16 @@ export default function LandingClient({ config }: LandingClientProps) {
         config.destinations,
         config.settings
       );
-      return { ...item, calc };
+      const copy = dict.scenarios.items[item.id];
+      return {
+        ...item,
+        title: copy.title,
+        routeSummary: copy.routeSummary,
+        detail: copy.detail,
+        calc,
+      };
     });
-  }, [config.rates, config.destinations, config.settings]);
+  }, [config.rates, config.destinations, config.settings, dict.scenarios.items]);
 
   const currentScenario = liveScenarios[activeSlide] || liveScenarios[0];
 
@@ -190,11 +186,11 @@ export default function LandingClient({ config }: LandingClientProps) {
       <Navbar settings={config.settings} />
 
       <main id="main-content" className="flex-1">
-        {/* HERO BANNER MATCHING REFERENCE */}
+        {/* HERO BANNER */}
         <section className="relative overflow-hidden bg-[#EFF5FF] border-b border-[#E2EAF6]">
           <img
             src="/images/hero-port-pontianak.jpg"
-            alt="Kapal kontainer dan derek pelabuhan di Pontianak Kalimantan Barat"
+            alt={dict.hero.imageAlt}
             width={1600}
             height={680}
             fetchPriority="high"
@@ -208,21 +204,15 @@ export default function LandingClient({ config }: LandingClientProps) {
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 lg:py-24">
             <div className="max-w-2xl space-y-6">
               <h1 className="text-3xl sm:text-5xl font-extrabold text-ink tracking-tight leading-[1.12]">
-                Solusi Impor &amp; Forwarder Terpercaya di Pontianak
+                {dict.hero.headline}
               </h1>
 
               <p className="text-base sm:text-lg text-slate-700 font-medium leading-relaxed max-w-xl">
-                Dari China, Malaysia/Kuching &amp; Singapura hingga ke seluruh
-                Kalimantan Barat, dengan harga transparan dan layanan
-                profesional.
+                {dict.hero.subtitle}
               </p>
 
               <ul className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm font-bold text-ink">
-                {[
-                  'Estimasi All-In sampai Pontianak',
-                  'Tracking Real-Time',
-                  'Tim Profesional & Responsif',
-                ].map((point) => (
+                {dict.hero.bullets.map((point) => (
                   <li key={point} className="inline-flex items-center gap-2">
                     <span className="h-5 w-5 rounded-full bg-navy text-white inline-flex items-center justify-center shrink-0">
                       <Check className="h-3.5 w-3.5" aria-hidden="true" />
@@ -238,7 +228,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                   className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-gold hover:bg-gold-dark text-ink font-extrabold px-6 text-sm shadow-sm transition-colors"
                 >
                   <Calculator className="h-4 w-4" aria-hidden="true" />
-                  Hitung Estimasi Biaya
+                  {dict.hero.ctaPrimary}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </a>
 
@@ -250,7 +240,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                     className="h-4 w-4 text-brand"
                     aria-hidden="true"
                   />
-                  Pelajari Layanan
+                  {dict.hero.ctaSecondary}
                 </a>
               </div>
             </div>
@@ -268,11 +258,14 @@ export default function LandingClient({ config }: LandingClientProps) {
               <div className="lg:col-span-5 space-y-5">
                 <div>
                   <div className="inline-flex items-center gap-2 text-xs font-bold text-brand">
-                    <span className="w-6 h-0.5 bg-brand rounded-full" aria-hidden="true" />
-                    Layanan Kami
+                    <span
+                      className="w-6 h-0.5 bg-brand rounded-full"
+                      aria-hidden="true"
+                    />
+                    {dict.services.eyebrow}
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight mt-1">
-                    Lengkap &amp; Terpercaya
+                    {dict.services.heading}
                   </h2>
                 </div>
 
@@ -286,11 +279,10 @@ export default function LandingClient({ config }: LandingClientProps) {
                       <ShoppingCart className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <h3 className="font-bold text-ink text-sm leading-snug">
-                      Jasa Titip Beli / Sourcing
+                      {dict.services.cards.titipBeli.title}
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Paste link 1688, Taobao, Alibaba, atau Shopee MY, kami
-                      urus pembelian &amp; QC.
+                      {dict.services.cards.titipBeli.desc}
                     </p>
                   </button>
 
@@ -303,11 +295,10 @@ export default function LandingClient({ config }: LandingClientProps) {
                       <Ship className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <h3 className="font-bold text-ink text-sm leading-snug">
-                      Freight Forwarder
+                      {dict.services.cards.forwarder.title}
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Kirim barang dari China, Kuching Malaysia &amp; Singapura
-                      langsung ke Pontianak.
+                      {dict.services.cards.forwarder.desc}
                     </p>
                   </button>
 
@@ -320,11 +311,12 @@ export default function LandingClient({ config }: LandingClientProps) {
                       <Banknote className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <h3 className="font-bold text-ink text-sm leading-snug">
-                      Transfer Valas RMB / MYR
+                      {dict.services.cards.transferValas.title}
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Titip bayar supplier aman dalam Rupiah dengan fee flat{' '}
-                      {formatIdr(config.settings.transfer_fee_idr)}.
+                      {dict.services.cards.transferValas.desc(
+                        formatIdr(config.settings.transfer_fee_idr)
+                      )}
                     </p>
                   </button>
 
@@ -336,11 +328,10 @@ export default function LandingClient({ config }: LandingClientProps) {
                       <Warehouse className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <h3 className="font-bold text-ink text-sm leading-snug">
-                      Gudang &amp; Marking Code
+                      {dict.services.cards.gudang.title}
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Alamat gudang Guangzhou, Kuching &amp; Singapura serta
-                      generator marking code.
+                      {dict.services.cards.gudang.desc}
                     </p>
                   </a>
                 </div>
@@ -360,7 +351,7 @@ export default function LandingClient({ config }: LandingClientProps) {
           </div>
         </section>
 
-        {/* 4-STEP ALUR KERJA KAMI MATCHING REFERENCE */}
+        {/* 4-STEP ALUR KERJA KAMI */}
         <section
           id="alur-kerja"
           className="py-12 lg:py-16 bg-ice border-b border-[#E2EAF6]"
@@ -369,38 +360,20 @@ export default function LandingClient({ config }: LandingClientProps) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-3 space-y-1.5">
                 <div className="inline-flex items-center gap-2 text-xs font-bold text-brand">
-                  <span className="w-6 h-0.5 bg-brand rounded-full" aria-hidden="true" />
-                  Alur Kerja Kami
+                  <span
+                    className="w-6 h-0.5 bg-brand rounded-full"
+                    aria-hidden="true"
+                  />
+                  {dict.workflow.eyebrow}
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-ink leading-tight">
-                  Mudah, Transparan, Terpercaya
+                  {dict.workflow.heading}
                 </h2>
               </div>
 
               <div className="lg:col-span-9 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  {
-                    icon: Link2,
-                    title: '1. Kirim Link / Permintaan Order',
-                    desc: 'Paste link produk atau unggah foto barang melalui form RFQ',
-                  },
-                  {
-                    icon: FileText,
-                    title: '2. Dapatkan Penawaran',
-                    desc: 'Harga all-in transparan: barang, ongkir & pengurusan bea cukai',
-                  },
-                  {
-                    icon: PackageCheck,
-                    title: '3. Proses & Pengiriman',
-                    desc: 'QC gudang asal, packing aman dan pengiriman menuju Pontianak',
-                  },
-                  {
-                    icon: CheckCircle2,
-                    title: '4. Terima Barang',
-                    desc: 'Ambil di gudang Pontianak atau teruskan ke alamat Kalbar',
-                  },
-                ].map((step, idx) => {
-                  const Icon = step.icon;
+                {dict.workflow.steps.map((step, idx) => {
+                  const Icon = WORKFLOW_ICONS[idx] || Link2;
                   return (
                     <div
                       key={step.title}
@@ -456,10 +429,10 @@ export default function LandingClient({ config }: LandingClientProps) {
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-extrabold">
-                        Cek Resi / Live Tracking
+                        {dict.quickTrack.title}
                       </h2>
                       <p className="text-xs sm:text-sm text-blue-100 mt-0.5">
-                        Pantau status pengiriman Anda secara real-time
+                        {dict.quickTrack.subtitle}
                       </p>
                     </div>
                   </div>
@@ -469,27 +442,27 @@ export default function LandingClient({ config }: LandingClientProps) {
                     className="flex flex-col sm:flex-row gap-2 bg-white rounded-xl p-1.5 shadow-sm"
                   >
                     <label htmlFor="card-quick-resi" className="sr-only">
-                      Masukkan Nomor Resi atau Marking Code
+                      {dict.quickTrack.inputLabel}
                     </label>
                     <input
                       id="card-quick-resi"
                       type="text"
                       value={quickResi}
                       onChange={(e) => setQuickResi(e.target.value)}
-                      placeholder="Masukkan Nomor Resi..."
+                      placeholder={dict.quickTrack.inputPlaceholder}
                       className="flex-1 min-h-[42px] px-3.5 py-2 text-sm font-mono text-ink placeholder:text-slate-500 rounded-lg bg-white"
                     />
                     <button
                       type="submit"
                       className="min-h-[42px] inline-flex items-center justify-center gap-1.5 rounded-lg bg-gold hover:bg-gold-dark text-ink font-extrabold px-5 text-sm transition-colors shrink-0"
                     >
-                      Lacak
+                      {dict.quickTrack.trackBtn}
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </form>
 
                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-blue-100">
-                    <span>Demo resi:</span>
+                    <span>{dict.quickTrack.demoLabel}</span>
                     {[
                       'IMP-PNK-2026-0001',
                       'IMP-PNK-2026-0002',
@@ -519,7 +492,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                     </span>
                     <div>
                       <h2 className="text-lg font-extrabold text-ink">
-                        Simulasi Rute Nyata ke Kalbar
+                        {dict.scenarios.heading}
                       </h2>
                       <p className="text-xs text-brand font-semibold">
                         {currentScenario.routeSummary}
@@ -537,15 +510,17 @@ export default function LandingClient({ config }: LandingClientProps) {
                   {currentScenario.calc && (
                     <div className="rounded-xl bg-ice border border-[#DCE6F5] p-3 text-xs space-y-1">
                       <div className="flex justify-between text-slate-700">
-                        <span>Ongkir Internasional + Penerusan:</span>
+                        <span>{dict.scenarios.shippingForwardingLabel}</span>
                         <span className="font-mono font-extrabold text-ink">
                           {formatIdr(currentScenario.calc.totalAllInIdr)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[11px] text-slate-600">
                         <span>
-                          Estimasi waktu: {currentScenario.calc.etaMinDays}–
-                          {currentScenario.calc.etaMaxDays} hari
+                          {dict.scenarios.etaLabel}{' '}
+                          {currentScenario.calc.etaMinDays}-
+                          {currentScenario.calc.etaMaxDays}{' '}
+                          {dict.scenarios.daysUnit}
                         </span>
                         <button
                           type="button"
@@ -554,7 +529,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                           }
                           className="font-bold text-brand hover:underline"
                         >
-                          Muat di Kalkulator →
+                          {dict.scenarios.loadInCalcBtn} →
                         </button>
                       </div>
                     </div>
@@ -567,7 +542,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                       <button
                         key={sc.id}
                         type="button"
-                        aria-label={`Lihat simulasi ${idx + 1}`}
+                        aria-label={dict.scenarios.dotAria(idx + 1)}
                         onClick={() => setActiveSlide(idx)}
                         className={`h-2 rounded-full transition-all ${
                           idx === activeSlide
@@ -581,7 +556,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      aria-label="Simulasi sebelumnya"
+                      aria-label={dict.scenarios.prevAria}
                       onClick={() =>
                         setActiveSlide(
                           (prev) =>
@@ -595,7 +570,7 @@ export default function LandingClient({ config }: LandingClientProps) {
                     </button>
                     <button
                       type="button"
-                      aria-label="Simulasi berikutnya"
+                      aria-label={dict.scenarios.nextAria}
                       onClick={() =>
                         setActiveSlide(
                           (prev) => (prev + 1) % liveScenarios.length
@@ -612,7 +587,7 @@ export default function LandingClient({ config }: LandingClientProps) {
           </div>
         </section>
 
-        {/* FULL WORKING MVP SECTIONS HARMONIZED WITH REFERENCE DESIGN */}
+        {/* FULL WORKING MVP SECTIONS */}
         <WarehouseSection warehouses={config.warehouses} />
 
         <RfqFormSection

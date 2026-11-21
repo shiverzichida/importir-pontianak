@@ -42,7 +42,14 @@ const config: Config = {
         paper: '#F6F5F1',
       },
       fontFamily: {
-        sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
+        sans: [
+          'var(--font-plus-jakarta)',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          '"Noto Sans SC"',
+          'system-ui',
+          'sans-serif',
+        ],
         mono: ['var(--font-ibm-plex-mono)', 'monospace'],
       },
     },

@@ -2,12 +2,14 @@ interface BrandLogoProps {
   variant?: 'light' | 'dark';
   showSubtitle?: boolean;
   companyName?: string;
+  subtitle?: string;
 }
 
 export function BrandLogo({
   variant = 'light',
   showSubtitle = true,
   companyName = 'Importir Pontianak',
+  subtitle = 'Impor Lebih Mudah, Sampai ke Kalbar',
 }: BrandLogoProps) {
   const isDarkBg = variant === 'dark';
   const parts = companyName.trim().split(/\s+/);
@@ -94,7 +96,7 @@ export function BrandLogo({
               isDarkBg ? 'text-blue-200' : 'text-slate-600'
             }`}
           >
-            Impor Lebih Mudah, Sampai ke Kalbar
+            {subtitle}
           </div>
         )}
       </div>

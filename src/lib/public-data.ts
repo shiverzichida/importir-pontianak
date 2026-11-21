@@ -64,7 +64,11 @@ export async function getPublicConfig(): Promise<PublicConfig> {
     }
 
     return {
-      settings,
+      settings: {
+        ...settings,
+        // Redact internal FX provider name from public payloads and SSR Flight data
+        fx_source: '',
+      },
       rates: (ratesRes.data as ShippingRate[] | null) ?? [],
       destinations: (destRes.data as KalbarDestination[] | null) ?? [],
       warehouses: (whRes.data as WarehouseInfo[] | null) ?? [],
@@ -72,7 +76,10 @@ export async function getPublicConfig(): Promise<PublicConfig> {
   } catch (err) {
     console.error('Failed to load public config:', err);
     return {
-      settings: DEFAULT_PUBLIC_SETTINGS,
+      settings: {
+        ...DEFAULT_PUBLIC_SETTINGS,
+        fx_source: '',
+      },
       rates: [],
       destinations: [],
       warehouses: [],

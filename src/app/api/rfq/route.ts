@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   buildWhatsAppUrl,
-  CATEGORY_LABELS,
   formatIdr,
-  METHOD_LABELS,
   normalizeWaPhone,
-  ORIGIN_LABELS,
-  SERVICE_LABELS,
 } from '@/lib/format';
-import { generateRfqCode } from '@/lib/server-codes';
+import { formatDestinationLabel, getDictionary } from '@/lib/i18n/dictionaries';
+import { LOCALE_COOKIE_NAME, normalizeLocale } from '@/lib/i18n/types';
 import { DEFAULT_PUBLIC_SETTINGS, mapSettingsRows } from '@/lib/public-data';
+import { generateRfqCode } from '@/lib/server-codes';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import type {
   CargoCategory,
@@ -21,7 +19,11 @@ import type {
   ServiceType,
 } from '@/lib/types';
 
-const VALID_SERVICES: ServiceType[] = ['titip_beli', 'forwarder', 'transfer_valas'];
+const VALID_SERVICES: ServiceType[] = [
+  'titip_beli',
+  'forwarder',
+  'transfer_valas',
+];
 const VALID_ORIGINS: OriginCountry[] = ['china', 'malaysia', 'singapura'];
 const VALID_METHODS: RfqShippingMethod[] = [
   'udara',
@@ -38,8 +40,14 @@ const VALID_CATEGORIES: CargoCategory[] = [
 const VALID_CURRENCIES: CurrencyCode[] = ['RMB', 'MYR', 'SGD', 'IDR'];
 
 export async function POST(req: NextRequest) {
+  let locale = normalizeLocale(req.cookies.get(LOCALE_COOKIE_NAME)?.value);
+
   try {
     const body = (await req.json()) as Record<string, unknown>;
+    if (typeof body.locale === 'string') {
+      locale = normalizeLocale(body.locale);
+    }
+    const dict = getDictionary(locale);
 
     const serviceType = String(body.service_type || '') as ServiceType;
     const customerName = String(body.customer_name || '').trim();
@@ -49,7 +57,8 @@ export async function POST(req: NextRequest) {
     const destinationCity = String(body.destination_city || '').trim();
     const originCountry = String(body.origin_country || '') as OriginCountry;
     const shippingMethod = String(
-      body.shipping_method || (serviceType === 'transfer_valas' ? 'transfer_only' : 'laut')
+      body.shipping_method ||
+        (serviceType === 'transfer_valas' ? 'transfer_only' : 'laut')
     ) as RfqShippingMethod;
     const cargoCategory = String(
       body.cargo_category || 'general'
@@ -62,49 +71,49 @@ export async function POST(req: NextRequest) {
 
     if (!VALID_SERVICES.includes(serviceType)) {
       return NextResponse.json(
-        { error: 'Jenis layanan tidak valid.' },
+        { error: dict.api.rfqInvalidService },
         { status: 400 }
       );
     }
     if (!customerName || customerName.length < 2) {
       return NextResponse.json(
-        { error: 'Nama lengkap wajib diisi.' },
+        { error: dict.api.rfqMissingName },
         { status: 400 }
       );
     }
     if (!customerWhatsapp || customerWhatsapp.length < 9) {
       return NextResponse.json(
-        { error: 'Nomor WhatsApp aktif wajib diisi dengan benar.' },
+        { error: dict.api.rfqInvalidWhatsapp },
         { status: 400 }
       );
     }
     if (!destinationCity) {
       return NextResponse.json(
-        { error: 'Kota tujuan di Kalimantan Barat wajib dipilih.' },
+        { error: dict.api.rfqMissingDestination },
         { status: 400 }
       );
     }
     if (!VALID_ORIGINS.includes(originCountry)) {
       return NextResponse.json(
-        { error: 'Negara asal pengiriman tidak valid.' },
+        { error: dict.api.rfqInvalidOrigin },
         { status: 400 }
       );
     }
     if (!VALID_METHODS.includes(shippingMethod)) {
       return NextResponse.json(
-        { error: 'Jalur pengiriman tidak valid.' },
+        { error: dict.api.rfqInvalidMethod },
         { status: 400 }
       );
     }
     if (!VALID_CATEGORIES.includes(cargoCategory)) {
       return NextResponse.json(
-        { error: 'Kategori barang tidak valid.' },
+        { error: dict.api.rfqInvalidCategory },
         { status: 400 }
       );
     }
     if (!productName) {
       return NextResponse.json(
-        { error: 'Nama barang / deskripsi order wajib diisi.' },
+        { error: dict.api.rfqMissingProduct },
         { status: 400 }
       );
     }
@@ -162,7 +171,7 @@ export async function POST(req: NextRequest) {
     if (error || !inserted) {
       console.error('Insert RFQ failed:', error);
       return NextResponse.json(
-        { error: 'Gagal menyimpan pengajuan RFQ. Silakan coba lagi.' },
+        { error: dict.api.rfqSaveError },
         { status: 500 }
       );
     }
@@ -175,42 +184,45 @@ export async function POST(req: NextRequest) {
       : DEFAULT_PUBLIC_SETTINGS;
 
     const order = inserted as RfqOrder;
+    const tpl = dict.api.rfqWaTemplate;
 
     const lines = [
-      `Halo Admin ${settings.company_name}, saya mengajukan permintaan penawaran (RFQ):`,
+      tpl.greeting(settings.company_name),
       '',
-      `*Kode RFQ:* ${order.rfq_code}`,
-      `*Layanan:* ${SERVICE_LABELS[order.service_type]}`,
-      `*Nama:* ${order.customer_name}${order.company_name ? ` (${order.company_name})` : ''}`,
-      `*Asal & Jalur:* ${ORIGIN_LABELS[order.origin_country]}, ${METHOD_LABELS[order.shipping_method]}`,
-      `*Kategori:* ${CATEGORY_LABELS[order.cargo_category]}`,
-      `*Produk:* ${order.product_name} (Qty: ${order.quantity ?? 1})`,
+      `*${tpl.code}:* ${order.rfq_code}`,
+      `*${tpl.service}:* ${dict.domain.serviceLabels[order.service_type]}`,
+      `*${tpl.name}:* ${order.customer_name}${order.company_name ? ` (${order.company_name})` : ''}`,
+      `*${tpl.originRoute}:* ${dict.domain.originLabels[order.origin_country]}, ${dict.domain.methodLabels[order.shipping_method]}`,
+      `*${tpl.category}:* ${dict.domain.categoryLabels[order.cargo_category]}`,
+      `*${tpl.product}:* ${order.product_name} (Qty: ${order.quantity ?? 1})`,
     ];
 
     if (order.product_url) {
-      lines.push(`*Link Produk:* ${order.product_url}`);
+      lines.push(`*${tpl.productUrl}:* ${order.product_url}`);
     }
     if (order.estimated_goods_value) {
       lines.push(
-        `*Nilai Barang:* ${order.estimated_goods_value} ${order.currency}`
+        `*${tpl.goodsValue}:* ${order.estimated_goods_value} ${order.currency}`
       );
     }
     if (order.estimated_weight_kg) {
-      lines.push(`*Estimasi Berat:* ${order.estimated_weight_kg} kg`);
+      lines.push(`*${tpl.weight}:* ${order.estimated_weight_kg} kg`);
     }
     if (order.estimated_cbm) {
-      lines.push(`*Estimasi Volume:* ${order.estimated_cbm} CBM`);
+      lines.push(`*${tpl.cbm}:* ${order.estimated_cbm} CBM`);
     }
     if (order.estimated_total_idr) {
       lines.push(
-        `*Estimasi Kalkulator:* ${formatIdr(order.estimated_total_idr)}`
+        `*${tpl.calcEstimate}:* ${formatIdr(order.estimated_total_idr)}`
       );
     }
-    lines.push(`*Tujuan:* ${order.destination_city}`);
+    lines.push(
+      `*${tpl.destination}:* ${formatDestinationLabel(order.destination_city, locale)}`
+    );
     if (order.customer_notes) {
-      lines.push(`*Catatan:* ${order.customer_notes}`);
+      lines.push(`*${tpl.notes}:* ${order.customer_notes}`);
     }
-    lines.push('', 'Mohon bantuannya untuk penawaran resmi & estimasi HPP-nya. Terima kasih!');
+    lines.push('', tpl.closing);
 
     const whatsappUrl = buildWhatsAppUrl(
       settings.whatsapp_admin,
@@ -223,8 +235,9 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     console.error('RFQ endpoint error:', err);
+    const dict = getDictionary(locale);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat memproses pengajuan RFQ.' },
+      { error: dict.api.rfqServerError },
       { status: 500 }
     );
   }

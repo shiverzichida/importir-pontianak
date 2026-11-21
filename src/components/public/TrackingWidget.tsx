@@ -16,17 +16,16 @@ import {
 } from 'lucide-react';
 import {
   buildWhatsAppUrl,
-  CATEGORY_LABELS,
   formatDateOnly,
   formatDateWib,
   formatIdr,
-  METHOD_LABELS,
-  ORIGIN_LABELS,
   PAYMENT_STATUS_META,
   SHIPMENT_STATUS_META,
   SHIPMENT_STEPS,
 } from '@/lib/format';
+import { formatDestinationLabel } from '@/lib/i18n/dictionaries';
 import type { PublicSettings, PublicShipment, TrackingEvent } from '@/lib/types';
+import { useLanguage } from './LanguageProvider';
 
 interface TrackingWidgetProps {
   initialQuery?: string;
@@ -34,15 +33,16 @@ interface TrackingWidgetProps {
 }
 
 const DEMO_CODES = [
-  { code: 'IMP-PNK-2026-0001', label: 'China Laut (In Transit)' },
-  { code: 'IMP-PNK-2026-0002', label: 'Kuching Darat (Tiba Pontianak)' },
-  { code: 'IMP-PNK-2026-0003', label: 'Singapura Udara (Diterima)' },
-];
+  'IMP-PNK-2026-0001',
+  'IMP-PNK-2026-0002',
+  'IMP-PNK-2026-0003',
+] as const;
 
 export default function TrackingWidget({
   initialQuery = '',
   settings,
 }: TrackingWidgetProps) {
+  const { locale, dict } = useLanguage();
   const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -51,36 +51,39 @@ export default function TrackingWidget({
     events: TrackingEvent[];
   } | null>(null);
 
-  const performSearch = useCallback(async (searchCode: string) => {
-    const trimmed = searchCode.trim();
-    if (!trimmed) return;
-    setLoading(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetch(
-        `/api/tracking?q=${encodeURIComponent(trimmed)}`,
-        { cache: 'no-store' }
-      );
-      const data = (await res.json()) as {
-        shipment?: PublicShipment;
-        events?: TrackingEvent[];
-        error?: string;
-      };
-      if (!res.ok || !data.shipment) {
-        setResult(null);
-        setErrorMsg(data.error || 'Data pengiriman tidak ditemukan.');
-      } else {
-        setResult({
-          shipment: data.shipment,
-          events: data.events || [],
-        });
+  const performSearch = useCallback(
+    async (searchCode: string) => {
+      const trimmed = searchCode.trim();
+      if (!trimmed) return;
+      setLoading(true);
+      setErrorMsg(null);
+      try {
+        const res = await fetch(
+          `/api/tracking?q=${encodeURIComponent(trimmed)}&lang=${locale}`,
+          { cache: 'no-store' }
+        );
+        const data = (await res.json()) as {
+          shipment?: PublicShipment;
+          events?: TrackingEvent[];
+          error?: string;
+        };
+        if (!res.ok || !data.shipment) {
+          setResult(null);
+          setErrorMsg(data.error || dict.tracking.errors.notFound);
+        } else {
+          setResult({
+            shipment: data.shipment,
+            events: data.events || [],
+          });
+        }
+      } catch {
+        setErrorMsg(dict.tracking.errors.serverError);
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      setErrorMsg('Gagal menghubungi server tracking. Silakan coba lagi.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [locale, dict.tracking.errors.notFound, dict.tracking.errors.serverError]
+  );
 
   useEffect(() => {
     if (initialQuery.trim()) {
@@ -130,11 +133,10 @@ export default function TrackingWidget({
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Cek Resi / Live Tracking
+                {dict.tracking.title}
               </h1>
               <p className="text-xs sm:text-sm text-blue-100">
-                Pantau status pengiriman China, Malaysia &amp; Singapura ke
-                Pontianak secara real-time
+                {dict.tracking.subtitle}
               </p>
             </div>
           </div>
@@ -145,7 +147,7 @@ export default function TrackingWidget({
           >
             <div className="relative flex-1">
               <label htmlFor="tracking-search-input" className="sr-only">
-                Nomor Resi, Marking Code, atau Resi Supplier
+                {dict.tracking.searchAriaLabel}
               </label>
               <Search
                 className="h-4 w-4 text-slate-500 absolute left-3.5 top-3.5"
@@ -156,7 +158,7 @@ export default function TrackingWidget({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Masukkan Nomor Resi (cth: IMP-PNK-2026-0001)..."
+                placeholder={dict.tracking.searchPlaceholder}
                 className="w-full min-h-[44px] rounded-lg bg-white text-ink placeholder:text-slate-500 pl-10 pr-3.5 py-2 text-sm font-mono"
               />
             </div>
@@ -167,12 +169,15 @@ export default function TrackingWidget({
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Mencari...
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
+                  {dict.tracking.searchingBtn}
                 </>
               ) : (
                 <>
-                  Lacak
+                  {dict.tracking.searchBtn}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </>
               )}
@@ -180,16 +185,18 @@ export default function TrackingWidget({
           </form>
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-blue-100">
-            <span>Coba resi demo:</span>
-            {DEMO_CODES.map((demo) => (
+            <span>{dict.tracking.demoLabel}</span>
+            {DEMO_CODES.map((code) => (
               <button
-                key={demo.code}
+                key={code}
                 type="button"
-                onClick={() => handleChipClick(demo.code)}
+                onClick={() => handleChipClick(code)}
                 className="min-h-[34px] inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1 font-mono text-white transition-colors"
               >
-                <span className="font-bold">{demo.code}</span>
-                <span className="font-sans text-blue-100">· {demo.label}</span>
+                <span className="font-bold">{code}</span>
+                <span className="font-sans text-blue-100">
+                  · {dict.tracking.demoLabels[code]}
+                </span>
               </button>
             ))}
           </div>
@@ -205,14 +212,14 @@ export default function TrackingWidget({
           <a
             href={buildWhatsAppUrl(
               settings.whatsapp_admin,
-              `Halo Admin ${settings.company_name}, saya ingin menanyakan resi / marking code: ${query}`
+              dict.tracking.waInquiryQuery(settings.company_name, query)
             )}
             target="_blank"
             rel="noopener noreferrer"
             className="min-h-[44px] inline-flex items-center gap-2 rounded-full bg-wa hover:bg-wa-dark text-white text-xs font-bold px-5 transition-colors"
           >
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            Tanya Admin via WhatsApp
+            {dict.tracking.askWaBtn}
           </a>
         </div>
       )}
@@ -223,7 +230,7 @@ export default function TrackingWidget({
             <div className="bg-ice border-b border-[#DCE6F5] px-6 py-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-xs font-bold text-slate-600">
-                  Nomor Resi Importir Pontianak
+                  {dict.tracking.result.trackingNoLabel}
                 </div>
                 <div className="text-xl sm:text-2xl font-extrabold font-mono text-ink">
                   {result.shipment.tracking_number}
@@ -233,12 +240,17 @@ export default function TrackingWidget({
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold border ${statusMeta.badgeClass}`}
                 >
-                  {statusMeta.label}
+                  {dict.domain.shipmentStatusLabels[
+                    result.shipment.current_status
+                  ] || statusMeta.label}
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold border ${paymentMeta.badgeClass}`}
                 >
-                  Pembayaran: {paymentMeta.label}
+                  {dict.tracking.result.paymentPrefix}{' '}
+                  {dict.domain.paymentStatusLabels[
+                    result.shipment.payment_status
+                  ] || paymentMeta.label}
                 </span>
               </div>
             </div>
@@ -248,6 +260,10 @@ export default function TrackingWidget({
                 {SHIPMENT_STEPS.map((step, idx) => {
                   const done = idx <= statusMeta.stepIndex;
                   const current = idx === statusMeta.stepIndex;
+                  const stepShortLabel =
+                    step.key !== 'out_for_delivery'
+                      ? dict.domain.shipmentStepShortLabels[step.key]
+                      : step.shortLabel;
                   return (
                     <div
                       key={step.key}
@@ -268,7 +284,10 @@ export default function TrackingWidget({
                           }`}
                         >
                           {done ? (
-                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                            <CheckCircle2
+                              className="h-4 w-4"
+                              aria-hidden="true"
+                            />
                           ) : (
                             idx + 1
                           )}
@@ -278,7 +297,7 @@ export default function TrackingWidget({
                         </span>
                       </div>
                       <div className="text-xs font-bold text-ink leading-tight">
-                        {step.shortLabel}
+                        {stepShortLabel}
                       </div>
                     </div>
                   );
@@ -287,42 +306,57 @@ export default function TrackingWidget({
 
               {result.shipment.current_status === 'out_for_delivery' && (
                 <div className="mt-4 rounded-xl bg-[#EEF5FF] border border-[#BBD2F8] px-4 py-2.5 text-xs font-semibold text-ink flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-brand shrink-0" aria-hidden="true" />
-                  Paket sedang dalam proses pengantaran kurir atau ekspedisi
-                  menuju alamat tujuan Anda di {result.shipment.destination_city}.
+                  <Truck
+                    className="h-4 w-4 text-brand shrink-0"
+                    aria-hidden="true"
+                  />
+                  {dict.tracking.result.outForDeliveryNotice(
+                    formatDestinationLabel(
+                      result.shipment.destination_city,
+                      locale
+                    )
+                  )}
                 </div>
               )}
             </div>
 
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
-                <div className="text-xs text-slate-600">Customer &amp; Marking Code</div>
+                <div className="text-xs text-slate-600">
+                  {dict.tracking.result.customerMarking}
+                </div>
                 <div className="font-bold text-ink mt-0.5">
                   {result.shipment.customer_name}
                 </div>
                 <div className="font-mono text-xs text-brand font-semibold mt-0.5">
-                  Marking: {result.shipment.marking_code}
+                  {dict.tracking.result.markingPrefix}{' '}
+                  {result.shipment.marking_code}
                 </div>
               </div>
 
               <div>
-                <div className="text-xs text-slate-600">Rute &amp; Jalur</div>
+                <div className="text-xs text-slate-600">
+                  {dict.tracking.result.routeMethod}
+                </div>
                 <div className="font-bold text-ink mt-0.5">
-                  {ORIGIN_LABELS[result.shipment.origin_country]}
+                  {dict.domain.originLabels[result.shipment.origin_country]}
                 </div>
                 <div className="text-xs text-slate-700 mt-0.5">
-                  {METHOD_LABELS[result.shipment.shipping_method]} ·{' '}
-                  {CATEGORY_LABELS[result.shipment.cargo_category]}
+                  {dict.domain.methodLabels[result.shipment.shipping_method]} ·{' '}
+                  {dict.domain.categoryLabels[result.shipment.cargo_category]}
                 </div>
               </div>
 
               <div>
-                <div className="text-xs text-slate-600">Barang &amp; Ukuran Gudang</div>
+                <div className="text-xs text-slate-600">
+                  {dict.tracking.result.goodsWarehouse}
+                </div>
                 <div className="font-semibold text-ink mt-0.5">
                   {result.shipment.item_summary}
                 </div>
                 <div className="text-xs font-mono text-slate-700 mt-0.5">
-                  {result.shipment.colli_count} Koli
+                  {result.shipment.colli_count}{' '}
+                  {dict.tracking.result.colliUnit}
                   {result.shipment.actual_weight_kg
                     ? ` · ${result.shipment.actual_weight_kg} kg`
                     : ''}
@@ -333,12 +367,18 @@ export default function TrackingWidget({
               </div>
 
               <div>
-                <div className="text-xs text-slate-600">Tujuan &amp; Tagihan</div>
+                <div className="text-xs text-slate-600">
+                  {dict.tracking.result.destinationInvoice}
+                </div>
                 <div className="font-bold text-ink mt-0.5">
-                  {result.shipment.destination_city}
+                  {formatDestinationLabel(
+                    result.shipment.destination_city,
+                    locale
+                  )}
                 </div>
                 <div className="text-xs text-slate-700 mt-0.5">
-                  ETA: {formatDateOnly(result.shipment.estimated_arrival)}
+                  {dict.tracking.result.etaPrefix}{' '}
+                  {formatDateOnly(result.shipment.estimated_arrival, locale)}
                   {result.shipment.invoice_amount_idr
                     ? ` · ${formatIdr(result.shipment.invoice_amount_idr)}`
                     : ''}
@@ -351,18 +391,19 @@ export default function TrackingWidget({
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <h2 className="text-lg font-extrabold text-ink flex items-center gap-2">
                 <Clock className="h-5 w-5 text-brand" aria-hidden="true" />
-                Riwayat Perjalanan Kargo
+                {dict.tracking.result.historyHeading}
               </h2>
               {result.shipment.supplier_tracking_no && (
                 <span className="text-xs font-mono bg-ice border border-[#DCE6F5] text-ink px-3 py-1 rounded-lg">
-                  Resi Supplier: {result.shipment.supplier_tracking_no}
+                  {dict.tracking.result.supplierResiPrefix}{' '}
+                  {result.shipment.supplier_tracking_no}
                 </span>
               )}
             </div>
 
             {result.events.length === 0 ? (
               <p className="text-sm text-slate-600 py-4">
-                Belum ada log perjalanan tambahan untuk resi ini.
+                {dict.tracking.result.noEvents}
               </p>
             ) : (
               <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-[#DCE6F5]">
@@ -394,7 +435,7 @@ export default function TrackingWidget({
                           {ev.title}
                         </h3>
                         <span className="text-xs font-mono text-slate-600">
-                          {formatDateWib(ev.event_time)}
+                          {formatDateWib(ev.event_time, locale)}
                         </span>
                       </div>
 
@@ -416,20 +457,27 @@ export default function TrackingWidget({
 
             <div className="mt-8 pt-5 border-t border-[#E6EEF9] flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-slate-700">
-                <ShieldCheck className="h-4 w-4 text-brand shrink-0" aria-hidden="true" />
-                Butuh update jadwal pengambilan gudang Pontianak atau pembayaran?
+                <ShieldCheck
+                  className="h-4 w-4 text-brand shrink-0"
+                  aria-hidden="true"
+                />
+                {dict.tracking.result.needUpdatePrompt}
               </div>
               <a
                 href={buildWhatsAppUrl(
                   settings.whatsapp_admin,
-                  `Halo Admin ${settings.company_name}, saya ingin menanyakan update resi ${result.shipment.tracking_number} (${result.shipment.marking_code}).`
+                  dict.tracking.waUpdateResi(
+                    settings.company_name,
+                    result.shipment.tracking_number,
+                    result.shipment.marking_code
+                  )
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="min-h-[44px] inline-flex items-center gap-2 rounded-full bg-wa hover:bg-wa-dark text-white font-bold px-5 text-xs shadow-sm transition-colors"
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                Hubungi Admin via WhatsApp
+                {dict.tracking.result.contactAdminBtn}
               </a>
             </div>
           </div>
@@ -444,11 +492,10 @@ export default function TrackingWidget({
             </div>
             <div>
               <div className="font-bold text-ink text-sm">
-                Belum punya nomor resi atau ingin ajukan pengiriman baru?
+                {dict.tracking.empty.title}
               </div>
               <div className="text-xs text-slate-600">
-                Hitung estimasi ongkir atau daftarkan resi supplier Anda melalui
-                form RFQ kami.
+                {dict.tracking.empty.desc}
               </div>
             </div>
           </div>
@@ -456,7 +503,7 @@ export default function TrackingWidget({
             href="/#rfq"
             className="min-h-[44px] inline-flex items-center justify-center rounded-full bg-brand hover:bg-brand-dark text-white font-bold px-5 text-xs transition-colors shrink-0"
           >
-            Ajukan Order / RFQ
+            {dict.tracking.empty.cta}
           </Link>
         </div>
       )}
