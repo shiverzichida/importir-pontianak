@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
+import { recalculateRatesFromStoredSpot } from '@/lib/fx-sync';
+import { SETTING_LABELS } from '@/lib/settings-mapper';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -67,17 +69,47 @@ export async function PATCH(req: NextRequest) {
         );
       }
 
-      for (const item of items) {
-        if (!item.key) continue;
+      const payload = items
+        .filter((item) => Boolean(item.key))
+        .map((item) => ({
+          key: item.key,
+          value: String(item.value ?? '').trim(),
+          label: SETTING_LABELS[item.key] || item.key,
+          updated_at: now,
+        }));
+
+      if (payload.length > 0) {
         const { error } = await supabase
           .from('imp_settings')
-          .update({ value: String(item.value ?? '').trim(), updated_at: now })
-          .eq('key', item.key);
+          .upsert(payload, { onConflict: 'key' });
         if (error) {
           return NextResponse.json({ error: error.message }, { status: 500 });
         }
       }
-      return NextResponse.json({ ok: true });
+
+      const modeItem = payload.find((p) => p.key === 'fx_mode');
+      if (modeItem?.value === 'auto') {
+        await recalculateRatesFromStoredSpot();
+      } else if (modeItem?.value === 'manual') {
+        await supabase.from('imp_settings').upsert(
+          [
+            {
+              key: 'fx_source',
+              value: 'Manual Admin',
+              label: SETTING_LABELS.fx_source,
+              updated_at: now,
+            },
+          ],
+          { onConflict: 'key' }
+        );
+      }
+
+      const { data: refreshed } = await supabase
+        .from('imp_settings')
+        .select('*')
+        .order('key', { ascending: true });
+
+      return NextResponse.json({ ok: true, settings: refreshed ?? [] });
     }
 
     if (type === 'rate') {

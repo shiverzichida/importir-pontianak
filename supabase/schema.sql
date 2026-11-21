@@ -185,7 +185,15 @@ INSERT INTO public.imp_settings (key, value, label) VALUES
   ('whatsapp_admin', '6281256789012', 'Nomor WhatsApp Admin (format 628...)'),
   ('company_name', 'Importir Pontianak', 'Nama Brand / Perusahaan'),
   ('company_address', 'Jl. Ahmad Yani II, Pontianak / Kubu Raya, Kalimantan Barat', 'Alamat Gudang & Kantor Pontianak'),
-  ('operating_hours', 'Senin – Sabtu, 08:30 – 17:30 WIB', 'Jam Operasional')
+  ('operating_hours', 'Senin – Sabtu, 08:30 – 17:30 WIB', 'Jam Operasional'),
+  ('fx_mode', 'auto', 'Mode Kurs Valas (auto / manual)'),
+  ('fx_spread_percent', '1.5', 'Margin Spread Kurs (%)'),
+  ('fx_spread_flat_idr', '0', 'Markup Tambahan Kurs Flat (IDR / unit)'),
+  ('fx_spot_rmb_idr', '0', 'Kurs Spot Pasar 1 RMB (IDR)'),
+  ('fx_spot_myr_idr', '0', 'Kurs Spot Pasar 1 MYR (IDR)'),
+  ('fx_spot_sgd_idr', '0', 'Kurs Spot Pasar 1 SGD (IDR)'),
+  ('fx_source', 'ECB (Frankfurter)', 'Sumber Data Kurs Terakhir'),
+  ('fx_last_synced_at', '', 'Waktu Sinkronisasi Kurs Terakhir')
 ON CONFLICT (key) DO NOTHING;
 
 -- 28 Shipping Rates (7 Route Modes x 4 Cargo Categories)

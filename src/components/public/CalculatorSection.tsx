@@ -613,7 +613,11 @@ export default function CalculatorSection({
                   </span>
                   <span className="block text-xs text-slate-600">
                     Hitung modal barang ({currency}) ditambah fee titip beli{' '}
-                    {settings.sourcing_fee_percent}%.
+                    {settings.sourcing_fee_percent}%. Sumber kurs:{' '}
+                    {settings.fx_mode === 'manual'
+                      ? 'Kurs Manual Admin'
+                      : `${settings.fx_source} (termasuk spread operasional)`}
+                    .
                   </span>
                 </div>
                 <input
@@ -770,6 +774,15 @@ export default function CalculatorSection({
                           {formatIdr(result.hppPerUnitIdr)} / pcs
                         </span>
                       </div>
+                    )}
+
+                    {includeGoodsValue && result.goodsValueIdr > 0 && (
+                      <p className="mt-2.5 text-xs text-slate-300">
+                        Sumber kurs:{' '}
+                        {settings.fx_mode === 'manual'
+                          ? 'Kurs Manual Admin'
+                          : `${settings.fx_source} + spread operasional`}
+                      </p>
                     )}
                   </div>
 

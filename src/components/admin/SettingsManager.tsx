@@ -1,16 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Coins,
   KeyRound,
   Loader2,
   MapPin,
+  RefreshCw,
   Save,
   Ship,
   Warehouse,
 } from 'lucide-react';
+import { formatDateWib, formatIdr } from '@/lib/format';
+import { computeEffectiveRates } from '@/lib/fx-utils';
 import type {
   ImpSettingRow,
   KalbarDestination,
@@ -19,6 +22,20 @@ import type {
 } from '@/lib/types';
 
 type TabKey = 'umum' | 'tarif' | 'kota' | 'gudang' | 'password';
+
+const FX_KEYS = new Set([
+  'fx_mode',
+  'fx_spread_percent',
+  'fx_spread_flat_idr',
+  'fx_spot_rmb_idr',
+  'fx_spot_myr_idr',
+  'fx_spot_sgd_idr',
+  'fx_source',
+  'fx_last_synced_at',
+  'rate_rmb_idr',
+  'rate_myr_idr',
+  'rate_sgd_idr',
+]);
 
 export default function SettingsManager() {
   const [activeTab, setActiveTab] = useState<TabKey>('umum');
@@ -30,6 +47,7 @@ export default function SettingsManager() {
   const [warehouses, setWarehouses] = useState<WarehouseInfo[]>([]);
 
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [syncingFx, setSyncingFx] = useState(false);
   const [notice, setNotice] = useState<{
     type: 'ok' | 'err';
     msg: string;
@@ -71,7 +89,73 @@ export default function SettingsManager() {
 
   const showNotice = (type: 'ok' | 'err', msg: string) => {
     setNotice({ type, msg });
-    setTimeout(() => setNotice(null), 4000);
+    setTimeout(() => setNotice(null), 5000);
+  };
+
+  const getSettingVal = (key: string, fallback = '') =>
+    settingsRows.find((r) => r.key === key)?.value ?? fallback;
+
+  const setSettingVal = (key: string, value: string) => {
+    setSettingsRows((prev) => {
+      const exists = prev.some((r) => r.key === key);
+      if (exists) {
+        return prev.map((r) => (r.key === key ? { ...r, value } : r));
+      }
+      return [
+        ...prev,
+        { key, value, label: key, updated_at: new Date().toISOString() },
+      ];
+    });
+  };
+
+  const fxMode = getSettingVal('fx_mode', 'auto') === 'manual' ? 'manual' : 'auto';
+  const spreadPercent = Number(getSettingVal('fx_spread_percent', '1.5')) || 0;
+  const spreadFlat = Number(getSettingVal('fx_spread_flat_idr', '0')) || 0;
+  const spotRmb = Number(getSettingVal('fx_spot_rmb_idr', '0')) || 0;
+  const spotMyr = Number(getSettingVal('fx_spot_myr_idr', '0')) || 0;
+  const spotSgd = Number(getSettingVal('fx_spot_sgd_idr', '0')) || 0;
+  const fxSource = getSettingVal('fx_source', 'ECB (Frankfurter)');
+  const fxLastSynced = getSettingVal('fx_last_synced_at', '');
+
+  const previewAutoRates = useMemo(() => {
+    if (spotRmb <= 0 || spotMyr <= 0 || spotSgd <= 0) return null;
+    return computeEffectiveRates(
+      { rmb: spotRmb, myr: spotMyr, sgd: spotSgd },
+      spreadPercent,
+      spreadFlat
+    );
+  }, [spotRmb, spotMyr, spotSgd, spreadPercent, spreadFlat]);
+
+  const nonFxSettings = useMemo(
+    () => settingsRows.filter((r) => !FX_KEYS.has(r.key)),
+    [settingsRows]
+  );
+
+  const handleSyncFxNow = async () => {
+    setSyncingFx(true);
+    try {
+      const res = await fetch('/api/admin/fx-sync', { method: 'POST' });
+      const data = (await res.json()) as {
+        settings?: ImpSettingRow[];
+        source?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        showNotice('err', data.error || 'Gagal menyinkronkan kurs pasar.');
+        return;
+      }
+      if (data.settings) {
+        setSettingsRows(data.settings);
+      }
+      showNotice(
+        'ok',
+        `Kurs pasar berhasil disinkronkan dari ${data.source || 'API pasar'}.`
+      );
+    } catch {
+      showNotice('err', 'Koneksi bermasalah saat menyinkronkan kurs pasar.');
+    } finally {
+      setSyncingFx(false);
+    }
   };
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
@@ -86,10 +170,15 @@ export default function SettingsManager() {
           items: settingsRows.map((r) => ({ key: r.key, value: r.value })),
         }),
       });
+      const data = (await res.json()) as {
+        settings?: ImpSettingRow[];
+        error?: string;
+      };
       if (res.ok) {
-        showNotice('ok', 'Kurs, biaya jasa, & profil perusahaan berhasil disimpan.');
+        if (data.settings) setSettingsRows(data.settings);
+        showNotice('ok', 'Pengaturan umum dan kurs valas berhasil disimpan.');
       } else {
-        showNotice('err', 'Gagal menyimpan pengaturan.');
+        showNotice('err', data.error || 'Gagal menyimpan pengaturan.');
       }
     } finally {
       setSavingId(null);
@@ -188,6 +277,32 @@ export default function SettingsManager() {
     { id: 'password', label: 'Ganti Password', icon: KeyRound },
   ];
 
+  const currencyRows: Array<{
+    code: string;
+    rateKey: 'rate_rmb_idr' | 'rate_myr_idr' | 'rate_sgd_idr';
+    spot: number;
+    autoPreview: number | null;
+  }> = [
+    {
+      code: '1 RMB (Yuan China)',
+      rateKey: 'rate_rmb_idr',
+      spot: spotRmb,
+      autoPreview: previewAutoRates?.rate_rmb_idr ?? null,
+    },
+    {
+      code: '1 MYR (Ringgit Malaysia)',
+      rateKey: 'rate_myr_idr',
+      spot: spotMyr,
+      autoPreview: previewAutoRates?.rate_myr_idr ?? null,
+    },
+    {
+      code: '1 SGD (Dolar Singapura)',
+      rateKey: 'rate_sgd_idr',
+      spot: spotSgd,
+      autoPreview: previewAutoRates?.rate_sgd_idr ?? null,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -261,42 +376,218 @@ export default function SettingsManager() {
       ) : (
         <>
           {activeTab === 'umum' && (
-            <form
-              onSubmit={handleSaveGeneral}
-              className="bg-white rounded-xl border border-slate-300 p-6 space-y-5"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {settingsRows.map((row, idx) => (
-                  <div key={row.key}>
+            <form onSubmit={handleSaveGeneral} className="space-y-6">
+              <div className="bg-white rounded-xl border border-slate-300 p-6 space-y-5">
+                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h2 className="text-base font-extrabold text-navy">
+                      Pengaturan Kurs Valas (Auto API + Spread / Manual Override)
+                    </h2>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Sumber terakhir: <strong>{fxSource}</strong> · Sinkronisasi:{' '}
+                      <span className="font-mono">
+                        {fxLastSynced ? formatDateWib(fxLastSynced) : 'Belum pernah'}
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSyncFxNow}
+                    disabled={syncingFx}
+                    className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-navy hover:bg-navy-light disabled:opacity-60 text-white font-bold px-4 text-xs transition-colors"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${syncingFx ? 'animate-spin' : ''}`}
+                      aria-hidden="true"
+                    />
+                    {syncingFx ? 'Menyinkronkan...' : 'Sinkronkan Kurs Pasar Sekarang'}
+                  </button>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-navy mb-2">
+                    Mode Penentuan Kurs Transaksi
+                  </p>
+                  <div
+                    role="radiogroup"
+                    aria-label="Mode kurs valas"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                  >
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={fxMode === 'auto'}
+                      onClick={() => setSettingVal('fx_mode', 'auto')}
+                      className={`text-left min-h-[56px] p-3.5 rounded-lg border transition-colors ${
+                        fxMode === 'auto'
+                          ? 'bg-teal-50 border-teal text-navy ring-1 ring-teal'
+                          : 'bg-paper border-slate-300 text-slate-800'
+                      }`}
+                    >
+                      <div className="text-sm font-bold">
+                        Otomatis (Kurs Pasar API + Margin Spread)
+                      </div>
+                      <div className="text-xs text-slate-600 mt-0.5">
+                        Refresh otomatis tiap 6 jam dari Frankfurter ECB / ExchangeRate-API.
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={fxMode === 'manual'}
+                      onClick={() => setSettingVal('fx_mode', 'manual')}
+                      className={`text-left min-h-[56px] p-3.5 rounded-lg border transition-colors ${
+                        fxMode === 'manual'
+                          ? 'bg-teal-50 border-teal text-navy ring-1 ring-teal'
+                          : 'bg-paper border-slate-300 text-slate-800'
+                      }`}
+                    >
+                      <div className="text-sm font-bold">
+                        Manual (Override Penuh oleh Admin)
+                      </div>
+                      <div className="text-xs text-slate-600 mt-0.5">
+                        Kurs tidak berubah otomatis; gunakan angka tetap yang Anda input.
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
                     <label
-                      htmlFor={`setting-${row.key}`}
+                      htmlFor="fx-spread-percent"
                       className="block text-xs font-bold text-navy mb-1"
                     >
-                      {row.label}
+                      Margin Spread Operasional (%)
                     </label>
                     <input
-                      id={`setting-${row.key}`}
-                      type="text"
-                      value={row.value}
-                      onChange={(e) => {
-                        const copy = [...settingsRows];
-                        copy[idx] = { ...row, value: e.target.value };
-                        setSettingsRows(copy);
-                      }}
+                      id="fx-spread-percent"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={getSettingVal('fx_spread_percent', '1.5')}
+                      onChange={(e) =>
+                        setSettingVal('fx_spread_percent', e.target.value)
+                      }
                       className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono focus:border-teal"
                     />
                   </div>
-                ))}
+                  <div>
+                    <label
+                      htmlFor="fx-spread-flat"
+                      className="block text-xs font-bold text-navy mb-1"
+                    >
+                      Markup Tambahan Flat (IDR per 1 unit valas)
+                    </label>
+                    <input
+                      id="fx-spread-flat"
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={getSettingVal('fx_spread_flat_idr', '0')}
+                      onChange={(e) =>
+                        setSettingVal('fx_spread_flat_idr', e.target.value)
+                      }
+                      className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono focus:border-teal"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-lg border border-slate-300">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-paper border-b border-slate-300 font-bold text-navy">
+                        <th className="px-4 py-3">Mata Uang</th>
+                        <th className="px-4 py-3">Kurs Spot Pasar</th>
+                        <th className="px-4 py-3">
+                          Kurs Transaksi Aktif (IDR)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {currencyRows.map((c) => {
+                        const manualVal = getSettingVal(c.rateKey, '0');
+                        const displayAuto =
+                          c.autoPreview !== null
+                            ? c.autoPreview
+                            : Number(manualVal) || 0;
+                        return (
+                          <tr key={c.rateKey}>
+                            <td className="px-4 py-3 font-bold text-navy">
+                              {c.code}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-slate-700">
+                              {c.spot > 0 ? formatIdr(c.spot) : 'Belum disinkronkan'}
+                            </td>
+                            <td className="px-4 py-3">
+                              {fxMode === 'manual' ? (
+                                <input
+                                  type="number"
+                                  min="1"
+                                  aria-label={`Kurs manual ${c.code}`}
+                                  value={manualVal}
+                                  onChange={(e) =>
+                                    setSettingVal(c.rateKey, e.target.value)
+                                  }
+                                  className="w-36 min-h-[40px] rounded-md border border-slate-300 px-3 py-1.5 font-mono font-bold text-navy focus:border-teal"
+                                />
+                              ) : (
+                                <div className="font-mono font-bold text-teal-dark text-sm">
+                                  {formatIdr(displayAuto)}{' '}
+                                  <span className="text-xs font-sans font-normal text-slate-600">
+                                    (Spot + {spreadPercent}%
+                                    {spreadFlat > 0
+                                      ? ` + ${formatIdr(spreadFlat)}`
+                                      : ''}
+                                    )
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={savingId === 'umum'}
-                  className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-5 text-xs transition-colors"
-                >
-                  <Save className="h-4 w-4" aria-hidden="true" />
-                  {savingId === 'umum' ? 'Menyimpan...' : 'Simpan Pengaturan Umum'}
-                </button>
+
+              <div className="bg-white rounded-xl border border-slate-300 p-6 space-y-5">
+                <h2 className="text-base font-extrabold text-navy">
+                  Biaya Jasa, WhatsApp Admin & Profil Perusahaan
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {nonFxSettings.map((row) => (
+                    <div key={row.key}>
+                      <label
+                        htmlFor={`setting-${row.key}`}
+                        className="block text-xs font-bold text-navy mb-1"
+                      >
+                        {row.label}
+                      </label>
+                      <input
+                        id={`setting-${row.key}`}
+                        type="text"
+                        value={row.value}
+                        onChange={(e) => setSettingVal(row.key, e.target.value)}
+                        className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono focus:border-teal"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={savingId === 'umum'}
+                    className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-5 text-xs transition-colors"
+                  >
+                    <Save className="h-4 w-4" aria-hidden="true" />
+                    {savingId === 'umum'
+                      ? 'Menyimpan...'
+                      : 'Simpan Pengaturan Umum & Kurs'}
+                  </button>
+                </div>
               </div>
             </form>
           )}

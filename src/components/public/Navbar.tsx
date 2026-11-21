@@ -55,6 +55,9 @@ export default function Navbar({ settings, isTrackingPage = false }: NavbarProps
             <span className="font-mono">
               1 SGD = <strong className="text-white">{formatIdr(settings.rate_sgd_idr)}</strong>
             </span>
+            <span className="hidden sm:inline text-slate-300">
+              ({settings.fx_mode === 'manual' ? 'Kurs Manual Admin' : `Sumber: ${settings.fx_source}`})
+            </span>
           </div>
           <div className="hidden md:flex items-center gap-3 text-slate-300">
             <span>{settings.operating_hours}</span>

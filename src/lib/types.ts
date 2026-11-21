@@ -42,6 +42,14 @@ export interface PublicSettings {
   company_name: string;
   company_address: string;
   operating_hours: string;
+  fx_mode: 'auto' | 'manual';
+  fx_spread_percent: number;
+  fx_spread_flat_idr: number;
+  fx_spot_rmb_idr: number;
+  fx_spot_myr_idr: number;
+  fx_spot_sgd_idr: number;
+  fx_source: string;
+  fx_last_synced_at: string | null;
 }
 
 export interface ShippingRate {
