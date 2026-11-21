@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: importir-pontianak-web:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    volumes:
+      - /etc/dokploy/data/importir-pontianak/uploads:/app/uploads
+    restart: unless-stopped
