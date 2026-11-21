@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
       `*Kode RFQ:* ${order.rfq_code}`,
       `*Layanan:* ${SERVICE_LABELS[order.service_type]}`,
       `*Nama:* ${order.customer_name}${order.company_name ? ` (${order.company_name})` : ''}`,
-      `*Asal & Jalur:* ${ORIGIN_LABELS[order.origin_country]} — ${METHOD_LABELS[order.shipping_method]}`,
+      `*Asal & Jalur:* ${ORIGIN_LABELS[order.origin_country]}, ${METHOD_LABELS[order.shipping_method]}`,
       `*Kategori:* ${CATEGORY_LABELS[order.cargo_category]}`,
       `*Produk:* ${order.product_name} (Qty: ${order.quantity ?? 1})`,
     ];

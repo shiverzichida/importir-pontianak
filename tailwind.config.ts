@@ -11,23 +11,24 @@ const config: Config = {
       colors: {
         navy: {
           DEFAULT: '#0B1F3A',
-          light: '#132D52',
+          light: '#122B4D',
           dark: '#071426',
         },
         teal: {
-          DEFAULT: '#0D9488',
+          DEFAULT: '#0F766E',
           light: '#14B8A6',
-          dark: '#0F766E',
+          dark: '#115E59',
         },
         amber: {
-          DEFAULT: '#D97706',
+          DEFAULT: '#B45309',
           light: '#F59E0B',
-          dark: '#B45309',
+          dark: '#92400E',
         },
+        paper: '#F6F5F1',
       },
       fontFamily: {
         sans: ['var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-jetbrains-mono)', 'monospace'],
+        mono: ['var(--font-ibm-plex-mono)', 'monospace'],
       },
     },
   },

@@ -1,10 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRight,
   Box,
-  Calculator,
   Info,
   MapPin,
   MessageCircle,
@@ -35,10 +33,29 @@ import type {
   ShippingRate,
 } from '@/lib/types';
 
+export interface CalculatorScenarioPreset {
+  originCountry: OriginCountry;
+  shippingMethod: ShippingMethod;
+  unit: RateUnit;
+  cargoCategory: CargoCategory;
+  actualWeightKg: string;
+  directCbm: string;
+  lengthCm: string;
+  widthCm: string;
+  heightCm: string;
+  colliCount: string;
+  destinationCity: string;
+  includeGoodsValue: boolean;
+  goodsValueForeign: string;
+  quantity: string;
+  nonce: number;
+}
+
 interface CalculatorSectionProps {
   rates: ShippingRate[];
   destinations: KalbarDestination[];
   settings: PublicSettings;
+  scenarioPreset?: CalculatorScenarioPreset | null;
   onApplyToRfq: (prefill: CalculatorPrefill) => void;
 }
 
@@ -56,11 +73,11 @@ export default function CalculatorSection({
   rates,
   destinations,
   settings,
+  scenarioPreset,
   onApplyToRfq,
 }: CalculatorSectionProps) {
   const [originCountry, setOriginCountry] = useState<OriginCountry>('china');
 
-  // Available unique route options (method + unit) for selected origin
   const routeOptions = useMemo<RouteOption[]>(() => {
     const map = new Map<string, RouteOption>();
     for (const r of rates) {
@@ -105,6 +122,24 @@ export default function CalculatorSection({
   const [includeGoodsValue, setIncludeGoodsValue] = useState<boolean>(true);
   const [goodsValueForeign, setGoodsValueForeign] = useState<string>('1800');
   const [quantity, setQuantity] = useState<string>('50');
+
+  useEffect(() => {
+    if (!scenarioPreset) return;
+    setOriginCountry(scenarioPreset.originCountry);
+    setSelectedRouteKey(`${scenarioPreset.shippingMethod}:${scenarioPreset.unit}`);
+    setCargoCategory(scenarioPreset.cargoCategory);
+    setActualWeightKg(scenarioPreset.actualWeightKg);
+    setDirectCbm(scenarioPreset.directCbm);
+    setLengthCm(scenarioPreset.lengthCm);
+    setWidthCm(scenarioPreset.widthCm);
+    setHeightCm(scenarioPreset.heightCm);
+    setColliCount(scenarioPreset.colliCount);
+    setUseDimForCbm(false);
+    setDestinationCity(scenarioPreset.destinationCity);
+    setIncludeGoodsValue(scenarioPreset.includeGoodsValue);
+    setGoodsValueForeign(scenarioPreset.goodsValueForeign);
+    setQuantity(scenarioPreset.quantity);
+  }, [scenarioPreset]);
 
   const handleOriginChange = (nextOrigin: OriginCountry) => {
     setOriginCountry(nextOrigin);
@@ -216,38 +251,36 @@ export default function CalculatorSection({
   ]);
 
   const methodIcon = (method: ShippingMethod) => {
-    if (method === 'udara') return <Plane className="h-4 w-4" />;
-    if (method === 'darat') return <Truck className="h-4 w-4" />;
-    return <Ship className="h-4 w-4" />;
+    if (method === 'udara') return <Plane className="h-4 w-4" aria-hidden="true" />;
+    if (method === 'darat') return <Truck className="h-4 w-4" aria-hidden="true" />;
+    return <Ship className="h-4 w-4" aria-hidden="true" />;
   };
 
   return (
     <section id="kalkulator" className="py-16 lg:py-20 bg-white border-y border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold uppercase tracking-wider mb-3 border border-teal-200">
-            <Calculator className="h-3.5 w-3.5" />
-            Kalkulator Impor All-In Pontianak & Kalbar
-          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-navy tracking-tight">
-            Hitung Estimasi Ongkir, Bea Cukai & HPP Langsung ke Kota Anda
+            Kalkulator Impor All-In ke Pontianak & Kalimantan Barat
           </h2>
-          <p className="mt-3 text-slate-600 text-base">
-            Tidak perlu menebak biaya double-shipping Jakarta–Kalbar. Pilih negara
-            asal, jalur (Udara / Laut LCL / Darat Entikong-Aruk), dimensi paket,
-            hingga kota penerusan di Kalimantan Barat.
+          <p className="mt-3 text-slate-700 text-base">
+            Hitung estimasi ongkos kirim internasional, pengurusan bea cukai,
+            penerusan kabupaten Kalbar, hingga HPP per unit dalam satu rincian
+            transparan.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Inputs */}
-          <div className="lg:col-span-7 bg-slate-50 rounded-2xl border border-slate-200 p-5 sm:p-7 space-y-6">
-            {/* Step 1: Origin Country */}
+          <div className="lg:col-span-7 bg-paper rounded-xl border border-slate-300 p-5 sm:p-7 space-y-6">
             <div>
-              <label className="block text-sm font-bold text-navy mb-2.5">
+              <p className="block text-sm font-bold text-navy mb-2.5">
                 1. Pilih Negara Asal Pengiriman
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              </p>
+              <div
+                role="radiogroup"
+                aria-label="Negara asal pengiriman"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+              >
                 {(
                   [
                     { id: 'china', label: 'China', sub: 'Guangzhou / Yiwu' },
@@ -260,17 +293,19 @@ export default function CalculatorSection({
                     <button
                       key={item.id}
                       type="button"
+                      role="radio"
+                      aria-checked={active}
                       onClick={() => handleOriginChange(item.id)}
-                      className={`text-left p-3.5 rounded-xl border transition-all ${
+                      className={`text-left min-h-[56px] p-3.5 rounded-lg border transition-colors ${
                         active
-                          ? 'bg-navy text-white border-navy shadow-sm'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-teal-400'
+                          ? 'bg-navy text-white border-navy'
+                          : 'bg-white text-slate-800 border-slate-300 hover:border-teal'
                       }`}
                     >
                       <div className="font-bold text-sm">{item.label}</div>
                       <div
                         className={`text-xs mt-0.5 ${
-                          active ? 'text-teal-300' : 'text-slate-500'
+                          active ? 'text-teal-300' : 'text-slate-600'
                         }`}
                       >
                         {item.sub}
@@ -281,11 +316,10 @@ export default function CalculatorSection({
               </div>
             </div>
 
-            {/* Step 2: Shipping Mode */}
             <div>
-              <label className="block text-sm font-bold text-navy mb-2.5">
+              <p className="block text-sm font-bold text-navy mb-2.5">
                 2. Pilih Jalur Pengiriman
-              </label>
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {routeOptions.map((opt) => {
                   const active = activeRoute?.key === opt.key;
@@ -293,18 +327,19 @@ export default function CalculatorSection({
                     <button
                       key={opt.key}
                       type="button"
+                      aria-pressed={active}
                       onClick={() => setSelectedRouteKey(opt.key)}
-                      className={`flex items-start gap-3 text-left p-3.5 rounded-xl border transition-all ${
+                      className={`flex items-start gap-3 text-left min-h-[64px] p-3.5 rounded-lg border transition-colors ${
                         active
-                          ? 'bg-teal-50 border-teal-600 text-navy ring-1 ring-teal-600'
-                          : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                          ? 'bg-teal-50 border-teal text-navy ring-1 ring-teal'
+                          : 'bg-white border-slate-300 text-slate-800 hover:border-slate-400'
                       }`}
                     >
                       <div
-                        className={`p-2 rounded-lg shrink-0 ${
+                        className={`p-2 rounded-md shrink-0 ${
                           active
                             ? 'bg-teal text-white'
-                            : 'bg-slate-100 text-slate-600'
+                            : 'bg-slate-100 text-slate-700'
                         }`}
                       >
                         {methodIcon(opt.shipping_method)}
@@ -313,9 +348,9 @@ export default function CalculatorSection({
                         <div className="font-bold text-sm leading-snug">
                           {opt.method_label}
                         </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          Satuan: <strong className="uppercase">{opt.unit}</strong> • Min{' '}
-                          {opt.min_charge} {opt.unit.toUpperCase()} • ETA {opt.eta_min_days}–
+                        <div className="text-xs text-slate-600 mt-1">
+                          Satuan: <strong className="uppercase">{opt.unit}</strong> · Min{' '}
+                          {opt.min_charge} {opt.unit.toUpperCase()} · ETA {opt.eta_min_days}–
                           {opt.eta_max_days} hari
                         </div>
                       </div>
@@ -325,16 +360,19 @@ export default function CalculatorSection({
               </div>
             </div>
 
-            {/* Step 3: Cargo Category & Destination */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-navy mb-2">
+                <label
+                  htmlFor="calc-cargo-category"
+                  className="block text-sm font-bold text-navy mb-2"
+                >
                   3. Kategori Barang
                 </label>
                 <select
+                  id="calc-cargo-category"
                   value={cargoCategory}
                   onChange={(e) => setCargoCategory(e.target.value as CargoCategory)}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:border-teal"
                 >
                   <option value="general">General Cargo (Barang Umum)</option>
                   <option value="fashion">Fashion, Tas, Sepatu & Tekstil</option>
@@ -344,15 +382,22 @@ export default function CalculatorSection({
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-navy mb-2">
+                <label
+                  htmlFor="calc-destination-city"
+                  className="block text-sm font-bold text-navy mb-2"
+                >
                   4. Tujuan di Kalimantan Barat
                 </label>
                 <div className="relative">
-                  <MapPin className="h-4 w-4 text-slate-400 absolute left-3.5 top-3" />
+                  <MapPin
+                    className="h-4 w-4 text-slate-500 absolute left-3.5 top-3.5"
+                    aria-hidden="true"
+                  />
                   <select
+                    id="calc-destination-city"
                     value={destinationCity}
                     onChange={(e) => setDestinationCity(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm font-medium text-slate-800 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className="w-full min-h-[44px] rounded-lg border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm font-medium text-slate-900 focus:border-teal"
                   >
                     {destinations.map((d) => (
                       <option key={d.id} value={d.city_name}>
@@ -364,14 +409,13 @@ export default function CalculatorSection({
               </div>
             </div>
 
-            {/* Step 4: Weight / Dimensions / CBM */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+            <div className="bg-white rounded-lg border border-slate-300 p-4 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-sm font-bold text-navy">
                   {activeRoute?.unit === 'cbm' ? (
-                    <Box className="h-4 w-4 text-teal-600" />
+                    <Box className="h-4 w-4 text-teal-dark" aria-hidden="true" />
                   ) : (
-                    <Scale className="h-4 w-4 text-teal-600" />
+                    <Scale className="h-4 w-4 text-teal-dark" aria-hidden="true" />
                   )}
                   5. Berat & Dimensi Kargo (
                   {activeRoute?.unit === 'cbm' ? 'Satuan CBM' : 'Satuan Kg'})
@@ -380,7 +424,7 @@ export default function CalculatorSection({
                   <button
                     type="button"
                     onClick={() => setUseDimForCbm((prev) => !prev)}
-                    className="text-xs font-semibold text-teal-700 hover:underline"
+                    className="min-h-[36px] px-2 text-xs font-bold text-teal-dark hover:underline"
                   >
                     {useDimForCbm
                       ? 'Input CBM langsung'
@@ -392,29 +436,37 @@ export default function CalculatorSection({
               {activeRoute?.unit === 'cbm' && !useDimForCbm ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    <label
+                      htmlFor="calc-direct-cbm"
+                      className="block text-xs font-semibold text-slate-700 mb-1"
+                    >
                       Estimasi Volume (CBM / m³)
                     </label>
                     <input
+                      id="calc-direct-cbm"
                       type="number"
                       step="0.01"
                       min="0"
                       value={directCbm}
                       onChange={(e) => setDirectCbm(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                      className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">
-                      Perkiraan Berat Total (Kg — untuk ongkir lokal Kalbar)
+                    <label
+                      htmlFor="calc-actual-weight"
+                      className="block text-xs font-semibold text-slate-700 mb-1"
+                    >
+                      Perkiraan Berat Total (Kg, untuk ongkir lokal Kalbar)
                     </label>
                     <input
+                      id="calc-actual-weight"
                       type="number"
                       step="0.5"
                       min="0"
                       value={actualWeightKg}
                       onChange={(e) => setActualWeightKg(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                      className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                     />
                   </div>
                 </div>
@@ -423,28 +475,36 @@ export default function CalculatorSection({
                   {activeRoute?.unit === 'kg' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        <label
+                          htmlFor="calc-actual-weight"
+                          className="block text-xs font-semibold text-slate-700 mb-1"
+                        >
                           Berat Aktual Total (Kg)
                         </label>
                         <input
+                          id="calc-actual-weight"
                           type="number"
                           step="0.5"
                           min="0"
                           value={actualWeightKg}
                           onChange={(e) => setActualWeightKg(e.target.value)}
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                          className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        <label
+                          htmlFor="calc-colli-count"
+                          className="block text-xs font-semibold text-slate-700 mb-1"
+                        >
                           Jumlah Koli / Dus
                         </label>
                         <input
+                          id="calc-colli-count"
                           type="number"
                           min="1"
                           value={colliCount}
                           onChange={(e) => setColliCount(e.target.value)}
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                          className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                         />
                       </div>
                     </div>
@@ -452,52 +512,68 @@ export default function CalculatorSection({
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">
+                      <label
+                        htmlFor="calc-length"
+                        className="block text-xs font-medium text-slate-700 mb-1"
+                      >
                         Panjang (cm)
                       </label>
                       <input
+                        id="calc-length"
                         type="number"
                         min="0"
                         value={lengthCm}
                         onChange={(e) => setLengthCm(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                        className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">
+                      <label
+                        htmlFor="calc-width"
+                        className="block text-xs font-medium text-slate-700 mb-1"
+                      >
                         Lebar (cm)
                       </label>
                       <input
+                        id="calc-width"
                         type="number"
                         min="0"
                         value={widthCm}
                         onChange={(e) => setWidthCm(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                        className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">
+                      <label
+                        htmlFor="calc-height"
+                        className="block text-xs font-medium text-slate-700 mb-1"
+                      >
                         Tinggi (cm)
                       </label>
                       <input
+                        id="calc-height"
                         type="number"
                         min="0"
                         value={heightCm}
                         onChange={(e) => setHeightCm(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                        className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                       />
                     </div>
                     {activeRoute?.unit === 'cbm' && (
                       <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">
+                        <label
+                          htmlFor="calc-colli-count"
+                          className="block text-xs font-medium text-slate-700 mb-1"
+                        >
                           Jumlah Koli
                         </label>
                         <input
+                          id="calc-colli-count"
                           type="number"
                           min="1"
                           value={colliCount}
                           onChange={(e) => setColliCount(e.target.value)}
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                          className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                         />
                       </div>
                     )}
@@ -507,69 +583,80 @@ export default function CalculatorSection({
 
               {result && result.unit === 'kg' && (
                 <div
-                  className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${
+                  className={`flex items-start gap-2 rounded-md px-3 py-2.5 text-xs ${
                     result.isVolumetricApplied
-                      ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                      : 'bg-slate-50 text-slate-600 border border-slate-200'
+                      ? 'bg-amber-50 text-amber-950 border border-amber-300'
+                      : 'bg-slate-50 text-slate-700 border border-slate-200'
                   }`}
                 >
-                  <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                  <Info className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>
-                    Berat aktual: <strong>{result.actualWeightKg} kg</strong> • Berat
+                    Berat aktual: <strong>{result.actualWeightKg} kg</strong> · Berat
                     volumetrik (P×L×T/{result.matchedRate.volumetric_divisor} × koli):{' '}
                     <strong>{result.volumetricWeightKg} kg</strong>.{' '}
                     {result.isVolumetricApplied
                       ? 'Perhitungan memakai berat volumetrik karena lebih besar dari berat timbangan.'
-                      : 'Perhitungan memakai berat aktual / minimum charge.'}
+                      : 'Perhitungan memakai berat aktual atau minimum charge.'}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Step 5: Optional Goods Value & HPP */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-              <label className="flex items-center justify-between cursor-pointer">
+            <div className="bg-white rounded-lg border border-slate-300 p-4 space-y-3">
+              <label
+                htmlFor="calc-include-goods"
+                className="flex items-center justify-between gap-4"
+              >
                 <div>
-                  <div className="text-sm font-bold text-navy">
-                    6. Sertakan Harga Barang (Hitung Estimasi HPP & Titip Beli)
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Aktifkan jika ingin menghitung modal barang ({currency}) + fee
-                    titip beli {settings.sourcing_fee_percent}%.
-                  </div>
+                  <span className="block text-sm font-bold text-navy">
+                    6. Sertakan Harga Barang (Hitung Estimasi HPP All-In)
+                  </span>
+                  <span className="block text-xs text-slate-600">
+                    Hitung modal barang ({currency}) ditambah fee titip beli{' '}
+                    {settings.sourcing_fee_percent}%.
+                  </span>
                 </div>
                 <input
+                  id="calc-include-goods"
                   type="checkbox"
                   checked={includeGoodsValue}
                   onChange={(e) => setIncludeGoodsValue(e.target.checked)}
-                  className="h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                  className="h-5 w-5 rounded border-slate-400 text-teal focus:ring-teal shrink-0"
                 />
               </label>
 
               {includeGoodsValue && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-200">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    <label
+                      htmlFor="calc-goods-value"
+                      className="block text-xs font-semibold text-slate-700 mb-1"
+                    >
                       Total Harga Barang di Supplier ({currency})
                     </label>
                     <input
+                      id="calc-goods-value"
                       type="number"
                       min="0"
                       value={goodsValueForeign}
                       onChange={(e) => setGoodsValueForeign(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                      className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    <label
+                      htmlFor="calc-quantity"
+                      className="block text-xs font-semibold text-slate-700 mb-1"
+                    >
                       Total Kuantitas Barang (Pcs / Unit)
                     </label>
                     <input
+                      id="calc-quantity"
                       type="number"
                       min="1"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal-600 focus:outline-none"
+                      className="w-full min-h-[44px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-teal"
                     />
                   </div>
                 </div>
@@ -577,12 +664,11 @@ export default function CalculatorSection({
             </div>
           </div>
 
-          {/* Right Sticky Breakdown Card */}
           <div className="lg:col-span-5 lg:sticky lg:top-28">
-            <div className="rounded-2xl bg-navy text-white p-6 sm:p-7 shadow-xl border border-navy-light">
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+            <div className="rounded-xl bg-navy text-white p-6 sm:p-7 shadow-lg border border-navy-light">
+              <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/15">
                 <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-teal-300">
+                  <span className="text-xs font-semibold text-teal-300">
                     Rincian Estimasi Biaya All-In
                   </span>
                   <h3 className="text-xl font-bold mt-0.5">
@@ -590,7 +676,7 @@ export default function CalculatorSection({
                   </h3>
                 </div>
                 {result && (
-                  <span className="px-2.5 py-1 rounded-lg bg-white/10 text-xs font-mono text-teal-200">
+                  <span className="px-2.5 py-1 rounded-md bg-navy-light border border-white/15 text-xs font-mono text-teal-200 shrink-0">
                     ETA {result.etaMinDays}–{result.etaMaxDays} Hari
                   </span>
                 )}
@@ -598,21 +684,21 @@ export default function CalculatorSection({
 
               {result ? (
                 <div className="mt-5 space-y-4">
-                  <div className="rounded-xl bg-white/5 border border-white/10 p-3.5 text-xs space-y-1.5">
-                    <div className="flex justify-between text-slate-300">
+                  <div className="rounded-lg bg-navy-light border border-white/10 p-3.5 text-xs space-y-1.5">
+                    <div className="flex justify-between gap-2 text-slate-300">
                       <span>Jalur & Kategori:</span>
                       <span className="font-semibold text-white text-right">
                         {result.matchedRate.method_label} ({result.matchedRate.category_label})
                       </span>
                     </div>
-                    <div className="flex justify-between text-slate-300">
+                    <div className="flex justify-between gap-2 text-slate-300">
                       <span>Tarif Dasar All-In:</span>
                       <span className="font-mono font-semibold text-teal-300">
                         {formatIdr(result.matchedRate.rate_idr)} /{' '}
                         {result.unit.toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-slate-300">
+                    <div className="flex justify-between gap-2 text-slate-300">
                       <span>Kuantitas Tertagih:</span>
                       <span className="font-mono font-semibold text-white">
                         {formatNumberId(result.chargeableQty, 3)}{' '}
@@ -623,7 +709,7 @@ export default function CalculatorSection({
                   </div>
 
                   <div className="space-y-2.5 text-sm">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center gap-2">
                       <span className="text-slate-300">
                         Ongkir Internasional + Bea Cukai
                       </span>
@@ -631,7 +717,7 @@ export default function CalculatorSection({
                         {formatIdr(result.internationalShippingIdr)}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center gap-2">
                       <span className="text-slate-300">
                         Penerusan ({result.destination?.city_name || destinationCity})
                       </span>
@@ -644,7 +730,7 @@ export default function CalculatorSection({
 
                     {includeGoodsValue && result.goodsValueIdr > 0 && (
                       <>
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center gap-2">
                           <span className="text-slate-300">
                             Harga Barang ({goodsValueForeign} {result.currency} ×{' '}
                             {formatIdr(result.fxRate)})
@@ -653,7 +739,7 @@ export default function CalculatorSection({
                             {formatIdr(result.goodsValueIdr)}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center gap-2">
                           <span className="text-slate-300">
                             Fee Jasa Titip Beli ({settings.sourcing_fee_percent}%)
                           </span>
@@ -676,9 +762,9 @@ export default function CalculatorSection({
                     </div>
 
                     {includeGoodsValue && result.hppPerUnitIdr !== null && (
-                      <div className="mt-2 flex items-center justify-between rounded-lg bg-teal-500/15 border border-teal-400/30 px-3 py-2 text-xs">
+                      <div className="mt-3 flex items-center justify-between gap-2 rounded-md bg-navy-light border border-teal-400/40 px-3 py-2.5 text-xs">
                         <span className="text-teal-200 font-medium">
-                          Estimasi Modal / HPP per Unit ({quantity} pcs):
+                          Estimasi HPP per Unit ({quantity} pcs):
                         </span>
                         <span className="font-mono font-bold text-white text-sm">
                           {formatIdr(result.hppPerUnitIdr)} / pcs
@@ -688,7 +774,7 @@ export default function CalculatorSection({
                   </div>
 
                   {result.matchedRate.notes && (
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-300 leading-relaxed">
                       Catatan rute: {result.matchedRate.notes}
                     </p>
                   )}
@@ -697,18 +783,17 @@ export default function CalculatorSection({
                     <button
                       type="button"
                       onClick={handleApplyToRfq}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-teal hover:bg-teal-light text-white font-bold py-3.5 px-4 text-sm shadow-lg transition"
+                      className="w-full min-h-[48px] inline-flex items-center justify-center rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-4 text-sm transition-colors"
                     >
                       Lanjutkan ke Form RFQ dengan Estimasi Ini
-                      <ArrowRight className="h-4 w-4" />
                     </button>
                     <a
                       href={whatsappDirectUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold py-2.5 px-4 text-xs border border-white/15 transition"
+                      className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 rounded-lg bg-navy-light hover:bg-white/15 text-white font-semibold px-4 text-xs border border-white/20 transition-colors"
                     >
-                      <MessageCircle className="h-4 w-4 text-emerald-400" />
+                      <MessageCircle className="h-4 w-4 text-teal-300" aria-hidden="true" />
                       Tanya Detail Tarif ke WhatsApp Admin
                     </a>
                   </div>

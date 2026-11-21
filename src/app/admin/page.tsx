@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
-  ArrowRight,
   CheckCircle2,
   Clock,
   FileSpreadsheet,
@@ -73,25 +72,25 @@ export default async function AdminOverviewPage() {
       label: 'Total RFQ / Order Masuk',
       value: totalRfqRes.count ?? 0,
       icon: FileSpreadsheet,
-      color: 'text-sky-600 bg-sky-50',
+      color: 'text-sky-700 bg-sky-50 border-sky-200',
     },
     {
       label: 'Perlu Penawaran (Baru / Dicek)',
       value: pendingRfqRes.count ?? 0,
       icon: Clock,
-      color: 'text-amber-600 bg-amber-50',
+      color: 'text-amber-800 bg-amber-50 border-amber-200',
     },
     {
       label: 'Pengiriman Aktif Berjalan',
       value: activeShipmentsRes.count ?? 0,
       icon: Truck,
-      color: 'text-indigo-600 bg-indigo-50',
+      color: 'text-indigo-700 bg-indigo-50 border-indigo-200',
     },
     {
       label: 'Tiba Pontianak / Selesai',
       value: arrivedShipmentsRes.count ?? 0,
       icon: CheckCircle2,
-      color: 'text-emerald-600 bg-emerald-50',
+      color: 'text-emerald-800 bg-emerald-50 border-emerald-200',
     },
   ];
 
@@ -103,7 +102,7 @@ export default async function AdminOverviewPage() {
             <h1 className="text-2xl font-extrabold text-navy">
               Overview Operasional
             </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-600 mt-0.5">
               Ringkasan pengajuan RFQ dan pergerakan kargo menuju Kalimantan
               Barat.
             </p>
@@ -111,36 +110,37 @@ export default async function AdminOverviewPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/admin/rfq"
-              className="rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-navy font-bold px-4 py-2 text-xs transition"
+              className="min-h-[44px] inline-flex items-center rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-navy font-bold px-4 text-xs transition-colors"
             >
               Kelola RFQ
             </Link>
             <Link
               href="/admin/shipments"
-              className="rounded-xl bg-teal hover:bg-teal-dark text-white font-bold px-4 py-2 text-xs transition"
+              className="min-h-[44px] inline-flex items-center rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-4 text-xs transition-colors"
             >
               Update Pengiriman
             </Link>
           </div>
         </div>
 
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpis.map((kpi) => {
             const Icon = kpi.icon;
             return (
               <div
                 key={kpi.label}
-                className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm flex items-center gap-4"
+                className="rounded-xl bg-white border border-slate-300 p-5 flex items-center gap-4"
               >
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${kpi.color}`}>
-                  <Icon className="h-6 w-6" />
+                <div
+                  className={`h-12 w-12 rounded-lg border flex items-center justify-center shrink-0 ${kpi.color}`}
+                >
+                  <Icon className="h-6 w-6" aria-hidden="true" />
                 </div>
                 <div>
                   <div className="text-2xl font-extrabold text-navy font-mono">
                     {kpi.value}
                   </div>
-                  <div className="text-xs font-medium text-slate-500">
+                  <div className="text-xs font-medium text-slate-600">
                     {kpi.label}
                   </div>
                 </div>
@@ -149,52 +149,50 @@ export default async function AdminOverviewPage() {
           })}
         </div>
 
-        {/* Two Column Lists */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Latest RFQs */}
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="rounded-xl bg-white border border-slate-300 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <h2 className="font-bold text-navy text-sm flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4 text-teal-600" />
+                <FileSpreadsheet className="h-4 w-4 text-teal-dark" aria-hidden="true" />
                 RFQ / Order Terbaru
               </h2>
               <Link
                 href="/admin/rfq"
-                className="text-xs font-semibold text-teal-700 hover:underline inline-flex items-center gap-1"
+                className="text-xs font-bold text-teal-dark hover:underline"
               >
-                Lihat Semua <ArrowRight className="h-3.5 w-3.5" />
+                Lihat Semua
               </Link>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-200">
               {latestRfqs.length === 0 ? (
-                <p className="p-5 text-sm text-slate-500">Belum ada RFQ.</p>
+                <p className="p-5 text-sm text-slate-600">Belum ada RFQ.</p>
               ) : (
                 latestRfqs.map((r) => {
                   const st = RFQ_STATUSES[r.status] || RFQ_STATUSES.baru;
                   return (
-                    <div key={r.id} className="p-4 hover:bg-slate-50 transition">
+                    <div key={r.id} className="p-4 hover:bg-slate-50 transition-colors">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <div className="font-mono text-xs font-bold text-teal-700">
+                          <div className="font-mono text-xs font-bold text-teal-dark">
                             {r.rfq_code}
                           </div>
                           <div className="font-bold text-sm text-navy mt-0.5">
                             {r.product_name}
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            {r.customer_name} • {SERVICE_LABELS[r.service_type]} •{' '}
+                          <div className="text-xs text-slate-600 mt-0.5">
+                            {r.customer_name} · {SERVICE_LABELS[r.service_type]} ·{' '}
                             {ORIGIN_LABELS[r.origin_country]}
                           </div>
                         </div>
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border shrink-0 ${st.badgeClass}`}
+                          className={`px-2.5 py-0.5 rounded-md text-xs font-bold border shrink-0 ${st.badgeClass}`}
                         >
                           {st.label}
                         </span>
                       </div>
-                      <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
+                      <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
                         <span>{formatDateWib(r.created_at)}</span>
-                        <span className="font-mono font-semibold text-slate-700">
+                        <span className="font-mono font-semibold text-slate-800">
                           {r.quoted_total_idr
                             ? `Penawaran: ${formatIdr(r.quoted_total_idr)}`
                             : r.estimated_total_idr
@@ -209,23 +207,22 @@ export default async function AdminOverviewPage() {
             </div>
           </div>
 
-          {/* Latest Shipments */}
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="rounded-xl bg-white border border-slate-300 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
               <h2 className="font-bold text-navy text-sm flex items-center gap-2">
-                <Package className="h-4 w-4 text-teal-600" />
+                <Package className="h-4 w-4 text-teal-dark" aria-hidden="true" />
                 Pengiriman & Tracking Terbaru
               </h2>
               <Link
                 href="/admin/shipments"
-                className="text-xs font-semibold text-teal-700 hover:underline inline-flex items-center gap-1"
+                className="text-xs font-bold text-teal-dark hover:underline"
               >
-                Lihat Semua <ArrowRight className="h-3.5 w-3.5" />
+                Lihat Semua
               </Link>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-200">
               {latestShipments.length === 0 ? (
-                <p className="p-5 text-sm text-slate-500">
+                <p className="p-5 text-sm text-slate-600">
                   Belum ada data pengiriman.
                 </p>
               ) : (
@@ -234,24 +231,24 @@ export default async function AdminOverviewPage() {
                     SHIPMENT_STATUS_META[s.current_status] ||
                     SHIPMENT_STATUS_META.order_confirmed;
                   return (
-                    <div key={s.id} className="p-4 hover:bg-slate-50 transition">
+                    <div key={s.id} className="p-4 hover:bg-slate-50 transition-colors">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="font-mono text-xs font-bold text-navy">
                             {s.tracking_number}{' '}
-                            <span className="text-slate-400 font-normal">
+                            <span className="text-slate-600 font-normal">
                               ({s.marking_code})
                             </span>
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 mt-0.5">
+                          <div className="font-semibold text-sm text-slate-900 mt-0.5">
                             {s.item_summary}
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
+                          <div className="text-xs text-slate-600 mt-0.5">
                             {s.customer_name} → {s.destination_city}
                           </div>
                         </div>
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border shrink-0 ${meta.badgeClass}`}
+                          className={`px-2.5 py-0.5 rounded-md text-xs font-bold border shrink-0 ${meta.badgeClass}`}
                         >
                           {meta.label}
                         </span>

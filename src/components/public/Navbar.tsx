@@ -31,14 +31,20 @@ export default function Navbar({ settings, isTrackingPage = false }: NavbarProps
       ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-      {/* Live FX Ticker Bar */}
-      <div className="bg-navy text-white text-xs py-1.5 px-4">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-navy focus:px-4 focus:py-2.5 focus:text-sm focus:font-bold focus:text-white"
+      >
+        Lewati ke konten utama
+      </a>
+
+      <div className="bg-navy text-white text-xs py-2 px-4 border-b border-white/10">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="inline-flex items-center gap-1.5 text-teal-300 font-semibold">
-              <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-pulse" />
-              Kurs Live Hari Ini:
+              <span className="h-2 w-2 rounded-full bg-teal-300" aria-hidden="true" />
+              Kurs Transaksi:
             </span>
             <span className="font-mono">
               1 RMB = <strong className="text-white">{formatIdr(settings.rate_rmb_idr)}</strong>
@@ -52,47 +58,49 @@ export default function Navbar({ settings, isTrackingPage = false }: NavbarProps
           </div>
           <div className="hidden md:flex items-center gap-3 text-slate-300">
             <span>{settings.operating_hours}</span>
-            <span>•</span>
+            <span aria-hidden="true">|</span>
             <span>Hub: Pontianak, Kalimantan Barat</span>
           </div>
         </div>
       </div>
 
-      {/* Main Navigation */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="h-10 w-10 rounded-xl bg-navy text-white flex items-center justify-center shadow-sm group-hover:bg-navy-light transition">
-            <Ship className="h-5 w-5 text-teal-300" />
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0 min-h-[44px]">
+          <div className="h-10 w-10 rounded-lg bg-navy text-white flex items-center justify-center group-hover:bg-navy-light transition-colors">
+            <Ship className="h-5 w-5 text-teal-300" aria-hidden="true" />
           </div>
           <div>
             <div className="font-bold text-navy text-base leading-tight tracking-tight">
               {settings.company_name}
             </div>
-            <div className="text-[11px] font-medium text-slate-500">
-              China • Malaysia • Singapura → Kalbar
+            <div className="text-xs font-medium text-slate-600">
+              China, Malaysia, Singapura ke Kalbar
             </div>
           </div>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-700">
+        <nav
+          aria-label="Navigasi utama"
+          className="hidden lg:flex items-center gap-5 text-sm font-medium text-slate-700"
+        >
           {navLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="hover:text-teal-700 transition-colors"
+              className="py-2 px-1 hover:text-teal-dark transition-colors"
             >
               {item.label}
             </Link>
           ))}
           <Link
             href="/tracking"
-            className={`inline-flex items-center gap-1.5 font-semibold transition-colors ${
+            className={`inline-flex items-center gap-1.5 py-2 px-1 font-semibold transition-colors ${
               isTrackingPage
-                ? 'text-teal-700'
-                : 'text-slate-700 hover:text-teal-700'
+                ? 'text-teal-dark underline underline-offset-4'
+                : 'text-slate-700 hover:text-teal-dark'
             }`}
           >
-            <Search className="h-3.5 w-3.5" />
+            <Search className="h-4 w-4" aria-hidden="true" />
             Cek Resi
           </Link>
         </nav>
@@ -100,16 +108,16 @@ export default function Navbar({ settings, isTrackingPage = false }: NavbarProps
         <div className="hidden md:flex items-center gap-2.5">
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-navy hover:bg-slate-100 transition"
+            className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg text-xs font-semibold text-slate-700 hover:text-navy hover:bg-slate-100 transition-colors"
           >
-            <ShieldCheck className="h-4 w-4" />
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
             Admin
           </Link>
           <Link
             href={isTrackingPage ? '/#rfq' : '#rfq'}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-semibold shadow-sm transition"
+            className="inline-flex items-center gap-1.5 px-4 min-h-[44px] rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-semibold transition-colors"
           >
-            <PackageCheck className="h-4 w-4" />
+            <PackageCheck className="h-4 w-4" aria-hidden="true" />
             Ajukan Order / RFQ
           </Link>
         </div>
@@ -117,22 +125,31 @@ export default function Navbar({ settings, isTrackingPage = false }: NavbarProps
         <button
           type="button"
           onClick={() => setMobileOpen((prev) => !prev)}
-          className="lg:hidden p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100"
-          aria-label="Toggle Menu"
+          className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-100"
+          aria-label={mobileOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav"
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileOpen ? (
+            <X className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <Menu className="h-5 w-5" aria-hidden="true" />
+          )}
         </button>
       </div>
 
-      {/* Mobile Menu Drawer */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2">
+        <nav
+          id="mobile-nav"
+          aria-label="Navigasi seluler"
+          className="lg:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1"
+        >
           {navLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="flex items-center min-h-[44px] px-3 rounded-lg text-sm font-medium text-slate-800 hover:bg-slate-100"
             >
               {item.label}
             </Link>
@@ -140,27 +157,27 @@ export default function Navbar({ settings, isTrackingPage = false }: NavbarProps
           <Link
             href="/tracking"
             onClick={() => setMobileOpen(false)}
-            className="block px-3 py-2 rounded-lg text-sm font-semibold text-teal-700 hover:bg-teal-50"
+            className="flex items-center min-h-[44px] px-3 rounded-lg text-sm font-semibold text-teal-dark hover:bg-teal-50"
           >
             Cek Resi / Live Tracking
           </Link>
-          <div className="pt-2 flex flex-col gap-2 border-t border-slate-100">
+          <div className="pt-2 flex flex-col gap-2 border-t border-slate-200">
             <Link
               href={isTrackingPage ? '/#rfq' : '#rfq'}
               onClick={() => setMobileOpen(false)}
-              className="w-full text-center px-4 py-2.5 rounded-lg bg-teal text-white text-sm font-semibold"
+              className="w-full min-h-[44px] flex items-center justify-center px-4 rounded-lg bg-teal hover:bg-teal-dark text-white text-sm font-semibold"
             >
               Ajukan Order / RFQ
             </Link>
             <Link
               href="/admin"
               onClick={() => setMobileOpen(false)}
-              className="w-full text-center px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium"
+              className="w-full min-h-[44px] flex items-center justify-center px-4 rounded-lg border border-slate-300 text-slate-800 text-sm font-medium hover:bg-slate-50"
             >
               Dashboard Admin
             </Link>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

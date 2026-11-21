@@ -109,19 +109,17 @@ export default function TrackingWidget({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
-      {/* Search Box Card */}
-      <div className="rounded-2xl bg-navy-grid text-white p-6 sm:p-10 shadow-lg">
+      <div className="rounded-xl bg-navy text-white p-6 sm:p-10 border border-navy-light">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-teal-500/15 border border-teal-400/30 px-3 py-1 text-xs font-semibold text-teal-200 mb-3">
-            <Truck className="h-3.5 w-3.5" />
-            Live Cargo Tracking — China, Malaysia, Singapura → Kalbar
+          <div className="font-mono text-xs text-teal-300 border-b border-white/15 pb-3 mb-4">
+            0°00&apos;N 109°20&apos;E · PELACAKAN KARGO KALIMANTAN BARAT
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
             Cek Status Pengiriman & Resi Kargo Anda
           </h1>
           <p className="mt-2 text-sm text-slate-300">
-            Cari menggunakan Nomor Resi (`IMP-PNK-...`), Marking Code
-            (`PNK-CN-...`), atau Nomor Resi Lokal Supplier.
+            Cari menggunakan Nomor Resi (IMP-PNK-...), Marking Code (PNK-CN-...),
+            atau Nomor Resi Lokal Supplier.
           </p>
         </div>
 
@@ -130,23 +128,30 @@ export default function TrackingWidget({
           className="mt-6 flex flex-col sm:flex-row gap-3"
         >
           <div className="relative flex-1">
-            <Search className="h-5 w-5 text-slate-400 absolute left-4 top-3.5" />
+            <label htmlFor="tracking-search-input" className="sr-only">
+              Nomor Resi, Marking Code, atau Resi Supplier
+            </label>
+            <Search
+              className="h-5 w-5 text-slate-500 absolute left-3.5 top-3.5"
+              aria-hidden="true"
+            />
             <input
+              id="tracking-search-input"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Contoh: IMP-PNK-2026-0001 atau PNK-CN-BUDI88"
-              className="w-full rounded-xl bg-white text-slate-900 placeholder:text-slate-400 pl-11 pr-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="w-full min-h-[48px] rounded-lg bg-white text-slate-900 placeholder:text-slate-500 pl-11 pr-4 py-3 text-sm font-mono"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal hover:bg-teal-light disabled:opacity-60 text-white font-bold px-6 py-3 text-sm shadow transition shrink-0"
+            className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-amber-light hover:bg-amber text-navy hover:text-white disabled:opacity-60 font-bold px-6 text-sm transition-colors shrink-0"
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 Mencari...
               </>
             ) : (
@@ -162,21 +167,21 @@ export default function TrackingWidget({
               key={demo.code}
               type="button"
               onClick={() => handleChipClick(demo.code)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 font-mono text-teal-200 transition"
+              className="min-h-[36px] inline-flex items-center gap-1.5 rounded-md bg-navy-light hover:bg-white/15 border border-white/20 px-3 py-1.5 font-mono text-teal-200 transition-colors"
             >
               <span className="font-bold">{demo.code}</span>
-              <span className="font-sans text-[11px] text-slate-300">
-                • {demo.label}
-              </span>
+              <span className="font-sans text-slate-300">· {demo.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Error State */}
       {errorMsg && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center space-y-3">
-          <p className="text-sm font-semibold text-rose-800">{errorMsg}</p>
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-300 bg-rose-50 p-6 text-center space-y-3"
+        >
+          <p className="text-sm font-semibold text-rose-900">{errorMsg}</p>
           <a
             href={buildWhatsAppUrl(
               settings.whatsapp_admin,
@@ -184,22 +189,20 @@ export default function TrackingWidget({
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 transition"
+            className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 transition-colors"
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
             Tanya Admin via WhatsApp
           </a>
         </div>
       )}
 
-      {/* Tracking Result */}
       {result && statusMeta && paymentMeta && (
         <div className="space-y-6">
-          {/* Shipment Summary */}
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="rounded-xl bg-white border border-slate-300 overflow-hidden">
+            <div className="bg-paper border-b border-slate-300 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div className="text-xs font-bold text-slate-600">
                   Nomor Resi Importir Pontianak
                 </div>
                 <div className="text-xl sm:text-2xl font-extrabold font-mono text-navy">
@@ -208,33 +211,32 @@ export default function TrackingWidget({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${statusMeta.badgeClass}`}
+                  className={`px-3 py-1 rounded-md text-xs font-bold border ${statusMeta.badgeClass}`}
                 >
                   {statusMeta.label}
                 </span>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${paymentMeta.badgeClass}`}
+                  className={`px-3 py-1 rounded-md text-xs font-bold border ${paymentMeta.badgeClass}`}
                 >
                   Pembayaran: {paymentMeta.label}
                 </span>
               </div>
             </div>
 
-            {/* 6-Step Progress Stepper */}
-            <div className="px-6 py-6 border-b border-slate-100">
-              <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+            <div className="px-6 py-6 border-b border-slate-200">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {SHIPMENT_STEPS.map((step, idx) => {
                   const done = idx <= statusMeta.stepIndex;
                   const current = idx === statusMeta.stepIndex;
                   return (
                     <div
                       key={step.key}
-                      className={`rounded-xl border p-3 transition ${
+                      className={`rounded-lg border p-3 ${
                         current
-                          ? 'bg-teal-50 border-teal-500 ring-1 ring-teal-500'
+                          ? 'bg-teal-50 border-teal ring-1 ring-teal'
                           : done
-                            ? 'bg-emerald-50/60 border-emerald-200'
-                            : 'bg-slate-50 border-slate-200 opacity-60'
+                            ? 'bg-emerald-50 border-emerald-300'
+                            : 'bg-slate-50 border-slate-200'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
@@ -242,12 +244,16 @@ export default function TrackingWidget({
                           className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
                             done
                               ? 'bg-teal text-white'
-                              : 'bg-slate-200 text-slate-600'
+                              : 'bg-slate-200 text-slate-700'
                           }`}
                         >
-                          {done ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
+                          {done ? (
+                            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            idx + 1
+                          )}
                         </span>
-                        <span className="text-[10px] font-mono text-slate-400">
+                        <span className="text-xs font-mono text-slate-600">
                           0{idx + 1}
                         </span>
                       </div>
@@ -260,88 +266,86 @@ export default function TrackingWidget({
               </div>
 
               {result.shipment.current_status === 'out_for_delivery' && (
-                <div className="mt-4 rounded-xl bg-cyan-50 border border-cyan-200 px-4 py-2.5 text-xs font-semibold text-cyan-900 flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-cyan-700" />
-                  Paket sedang dalam proses pengantaran kurir / ekspedisi menuju
-                  alamat tujuan Anda di {result.shipment.destination_city}.
+                <div className="mt-4 rounded-lg bg-cyan-50 border border-cyan-300 px-4 py-2.5 text-xs font-semibold text-cyan-950 flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-cyan-800 shrink-0" aria-hidden="true" />
+                  Paket sedang dalam proses pengantaran kurir atau ekspedisi
+                  menuju alamat tujuan Anda di {result.shipment.destination_city}.
                 </div>
               )}
             </div>
 
-            {/* Metadata Grid */}
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
-                <div className="text-xs text-slate-500">Customer & Marking Code</div>
+                <div className="text-xs text-slate-600">Customer & Marking Code</div>
                 <div className="font-bold text-navy mt-0.5">
                   {result.shipment.customer_name}
                 </div>
-                <div className="font-mono text-xs text-teal-700 font-semibold mt-0.5">
+                <div className="font-mono text-xs text-teal-dark font-semibold mt-0.5">
                   Marking: {result.shipment.marking_code}
                 </div>
               </div>
 
               <div>
-                <div className="text-xs text-slate-500">Rute & Jalur</div>
+                <div className="text-xs text-slate-600">Rute & Jalur</div>
                 <div className="font-bold text-navy mt-0.5">
                   {ORIGIN_LABELS[result.shipment.origin_country]}
                 </div>
-                <div className="text-xs text-slate-600 mt-0.5">
-                  {METHOD_LABELS[result.shipment.shipping_method]} •{' '}
+                <div className="text-xs text-slate-700 mt-0.5">
+                  {METHOD_LABELS[result.shipment.shipping_method]} ·{' '}
                   {CATEGORY_LABELS[result.shipment.cargo_category]}
                 </div>
               </div>
 
               <div>
-                <div className="text-xs text-slate-500">Barang & Ukuran Gudang</div>
+                <div className="text-xs text-slate-600">Barang & Ukuran Gudang</div>
                 <div className="font-semibold text-navy mt-0.5">
                   {result.shipment.item_summary}
                 </div>
-                <div className="text-xs font-mono text-slate-600 mt-0.5">
+                <div className="text-xs font-mono text-slate-700 mt-0.5">
                   {result.shipment.colli_count} Koli
                   {result.shipment.actual_weight_kg
-                    ? ` • ${result.shipment.actual_weight_kg} kg`
+                    ? ` · ${result.shipment.actual_weight_kg} kg`
                     : ''}
                   {result.shipment.actual_cbm
-                    ? ` • ${result.shipment.actual_cbm} CBM`
+                    ? ` · ${result.shipment.actual_cbm} CBM`
                     : ''}
                 </div>
               </div>
 
               <div>
-                <div className="text-xs text-slate-500">Tujuan & Tagihan</div>
+                <div className="text-xs text-slate-600">Tujuan & Tagihan</div>
                 <div className="font-bold text-navy mt-0.5">
                   {result.shipment.destination_city}
                 </div>
-                <div className="text-xs text-slate-600 mt-0.5">
+                <div className="text-xs text-slate-700 mt-0.5">
                   ETA: {formatDateOnly(result.shipment.estimated_arrival)}
                   {result.shipment.invoice_amount_idr
-                    ? ` • ${formatIdr(result.shipment.invoice_amount_idr)}`
+                    ? ` · ${formatIdr(result.shipment.invoice_amount_idr)}`
                     : ''}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Chronological Timeline */}
-          <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm">
+          <div className="rounded-xl bg-white border border-slate-300 p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <h2 className="text-lg font-extrabold text-navy flex items-center gap-2">
-                <Clock className="h-5 w-5 text-teal-600" />
+                <Clock className="h-5 w-5 text-teal-dark" aria-hidden="true" />
                 Riwayat Perjalanan Kargo
               </h2>
               {result.shipment.supplier_tracking_no && (
-                <span className="text-xs font-mono bg-slate-100 text-slate-700 px-3 py-1 rounded-lg">
+                <span className="text-xs font-mono bg-paper border border-slate-200 text-slate-800 px-3 py-1 rounded-md">
                   Resi Supplier: {result.shipment.supplier_tracking_no}
                 </span>
               )}
             </div>
 
             {result.events.length === 0 ? (
-              <p className="text-sm text-slate-500 py-4">
+              <p className="text-sm text-slate-600 py-4">
                 Belum ada log perjalanan tambahan untuk resi ini.
               </p>
             ) : (
-              <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+              <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-300">
                 {result.events.map((ev, idx) => {
                   const isLatest = idx === 0;
                   return (
@@ -350,12 +354,13 @@ export default function TrackingWidget({
                         className={`absolute -left-6 top-1 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
                           isLatest
                             ? 'bg-teal border-teal-200 text-white'
-                            : 'bg-white border-slate-300 text-slate-400'
+                            : 'bg-white border-slate-400 text-slate-500'
                         }`}
+                        aria-hidden="true"
                       >
                         <span
                           className={`h-2 w-2 rounded-full ${
-                            isLatest ? 'bg-white' : 'bg-slate-300'
+                            isLatest ? 'bg-white' : 'bg-slate-400'
                           }`}
                         />
                       </span>
@@ -363,23 +368,23 @@ export default function TrackingWidget({
                       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
                         <h3
                           className={`text-sm font-bold ${
-                            isLatest ? 'text-navy' : 'text-slate-700'
+                            isLatest ? 'text-navy' : 'text-slate-800'
                           }`}
                         >
                           {ev.title}
                         </h3>
-                        <span className="text-xs font-mono text-slate-500">
+                        <span className="text-xs font-mono text-slate-600">
                           {formatDateWib(ev.event_time)}
                         </span>
                       </div>
 
-                      <div className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-teal-700">
-                        <MapPin className="h-3.5 w-3.5" />
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-teal-dark">
+                        <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
                         {ev.location}
                       </div>
 
                       {ev.description && (
-                        <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
+                        <p className="mt-1.5 text-sm text-slate-700 leading-relaxed">
                           {ev.description}
                         </p>
                       )}
@@ -389,9 +394,9 @@ export default function TrackingWidget({
               </div>
             )}
 
-            <div className="mt-8 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <ShieldCheck className="h-4 w-4 text-teal-600" />
+            <div className="mt-8 pt-5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-700">
+                <ShieldCheck className="h-4 w-4 text-teal-dark shrink-0" aria-hidden="true" />
                 Butuh update jadwal pengambilan gudang Pontianak atau pembayaran?
               </div>
               <a
@@ -401,9 +406,9 @@ export default function TrackingWidget({
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 text-xs transition"
+                className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 text-xs transition-colors"
               >
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 Hubungi Admin via WhatsApp
               </a>
             </div>
@@ -411,18 +416,17 @@ export default function TrackingWidget({
         </div>
       )}
 
-      {/* Quick Back CTA when idle */}
       {!result && !errorMsg && !loading && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="rounded-xl border border-slate-300 bg-white p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
-              <Package className="h-5 w-5" />
+            <div className="h-11 w-11 rounded-lg bg-teal-50 border border-teal-200 text-teal-dark flex items-center justify-center shrink-0">
+              <Package className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
               <div className="font-bold text-navy text-sm">
                 Belum punya nomor resi atau ingin ajukan pengiriman baru?
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-slate-600">
                 Hitung estimasi ongkir atau daftarkan resi supplier Anda melalui
                 form RFQ kami.
               </div>
@@ -430,7 +434,7 @@ export default function TrackingWidget({
           </div>
           <Link
             href="/#rfq"
-            className="rounded-xl bg-navy hover:bg-navy-light text-white font-bold px-5 py-2.5 text-xs transition shrink-0"
+            className="min-h-[44px] inline-flex items-center justify-center rounded-lg bg-navy hover:bg-navy-light text-white font-bold px-5 text-xs transition-colors shrink-0"
           >
             Ajukan Order / RFQ
           </Link>

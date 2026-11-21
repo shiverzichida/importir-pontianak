@@ -1,29 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowRight,
-  BadgeCheck,
   Banknote,
-  Calculator,
   Check,
-  Clock,
-  Globe2,
-  MapPin,
   MessageCircle,
   Package,
-  Plane,
   Search,
-  ShieldCheck,
   Ship,
   ShoppingBag,
-  Truck,
 } from 'lucide-react';
-import { buildWhatsAppUrl, formatIdr } from '@/lib/format';
-import type { CalculatorPrefill, PublicConfig, ServiceType } from '@/lib/types';
-import CalculatorSection from './CalculatorSection';
+import { calculateImportEstimate } from '@/lib/calculator';
+import { buildWhatsAppUrl, formatIdr, ORIGIN_LABELS } from '@/lib/format';
+import type {
+  CalculatorPrefill,
+  OriginCountry,
+  PublicConfig,
+  ServiceType,
+} from '@/lib/types';
+import CalculatorSection, {
+  type CalculatorScenarioPreset,
+} from './CalculatorSection';
 import FaqSection from './FaqSection';
 import Navbar from './Navbar';
 import RfqFormSection from './RfqFormSection';
@@ -41,6 +40,8 @@ export default function LandingClient({ config }: LandingClientProps) {
     service: ServiceType;
     nonce: number;
   } | null>(null);
+  const [scenarioPreset, setScenarioPreset] =
+    useState<CalculatorScenarioPreset | null>(null);
 
   const handleQuickTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +65,149 @@ export default function LandingClient({ config }: LandingClientProps) {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const loadScenarioToCalculator = (
+    preset: Omit<CalculatorScenarioPreset, 'nonce'>
+  ) => {
+    setScenarioPreset({ ...preset, nonce: Date.now() });
+    const el = document.getElementById('kalkulator');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const routeLedgers = useMemo(() => {
+    const origins: OriginCountry[] = ['china', 'malaysia', 'singapura'];
+    return origins.map((origin) => {
+      const originRates = config.rates.filter(
+        (r) => r.is_active && r.origin_country === origin
+      );
+      const uniqueModes = new Map<
+        string,
+        {
+          methodLabel: string;
+          unit: string;
+          minRate: number;
+          etaMin: number;
+          etaMax: number;
+        }
+      >();
+      for (const r of originRates) {
+        const key = `${r.shipping_method}:${r.unit}`;
+        const existing = uniqueModes.get(key);
+        if (!existing || r.rate_idr < existing.minRate) {
+          uniqueModes.set(key, {
+            methodLabel: r.method_label,
+            unit: r.unit.toUpperCase(),
+            minRate: existing ? Math.min(existing.minRate, r.rate_idr) : r.rate_idr,
+            etaMin: r.eta_min_days,
+            etaMax: r.eta_max_days,
+          });
+        }
+      }
+      return {
+        origin,
+        label: ORIGIN_LABELS[origin],
+        modes: Array.from(uniqueModes.values()),
+      };
+    });
+  }, [config.rates]);
+
+  const liveScenarios = useMemo(() => {
+    const specs: Array<{
+      id: string;
+      title: string;
+      subtitle: string;
+      preset: Omit<CalculatorScenarioPreset, 'nonce'>;
+    }> = [
+      {
+        id: 'cn-lcl',
+        title: 'Mesin Usaha & Kemasan dari Yiwu / Guangzhou',
+        subtitle: 'China Laut LCL · 0,35 CBM · Elektronik · Pontianak Dalam Kota',
+        preset: {
+          originCountry: 'china',
+          shippingMethod: 'laut',
+          unit: 'cbm',
+          cargoCategory: 'elektronik',
+          actualWeightKg: '42',
+          directCbm: '0.35',
+          lengthCm: '0',
+          widthCm: '0',
+          heightCm: '0',
+          colliCount: '1',
+          destinationCity: 'Pontianak (Kurir Dalam Kota)',
+          includeGoodsValue: false,
+          goodsValueForeign: '0',
+          quantity: '1',
+        },
+      },
+      {
+        id: 'my-darat',
+        title: 'Belanja Grosir Fashion dari Kuching',
+        subtitle: 'Malaysia Darat Entikong/Aruk · 25 Kg · Fashion · Tujuan Singkawang',
+        preset: {
+          originCountry: 'malaysia',
+          shippingMethod: 'darat',
+          unit: 'kg',
+          cargoCategory: 'fashion',
+          actualWeightKg: '25',
+          directCbm: '0',
+          lengthCm: '0',
+          widthCm: '0',
+          heightCm: '0',
+          colliCount: '1',
+          destinationCity: 'Singkawang',
+          includeGoodsValue: false,
+          goodsValueForeign: '0',
+          quantity: '1',
+        },
+      },
+      {
+        id: 'sg-udara',
+        title: 'Sparepart Teknik Ekspres dari Singapura',
+        subtitle: 'Singapura Udara · 4 Kg · Elektronik · Ambil Gudang Pontianak',
+        preset: {
+          originCountry: 'singapura',
+          shippingMethod: 'udara',
+          unit: 'kg',
+          cargoCategory: 'elektronik',
+          actualWeightKg: '4',
+          directCbm: '0',
+          lengthCm: '0',
+          widthCm: '0',
+          heightCm: '0',
+          colliCount: '1',
+          destinationCity: 'Pontianak (Ambil di Gudang)',
+          includeGoodsValue: false,
+          goodsValueForeign: '0',
+          quantity: '1',
+        },
+      },
+    ];
+
+    return specs.map((item) => {
+      const calc = calculateImportEstimate(
+        {
+          originCountry: item.preset.originCountry,
+          shippingMethod: item.preset.shippingMethod,
+          unit: item.preset.unit,
+          cargoCategory: item.preset.cargoCategory,
+          actualWeightKg: Number(item.preset.actualWeightKg),
+          lengthCm: Number(item.preset.lengthCm),
+          widthCm: Number(item.preset.widthCm),
+          heightCm: Number(item.preset.heightCm),
+          colliCount: Number(item.preset.colliCount),
+          directCbm: Number(item.preset.directCbm),
+          destinationCity: item.preset.destinationCity,
+          includeGoodsValue: false,
+          goodsValueForeign: 0,
+          quantity: 1,
+        },
+        config.rates,
+        config.destinations,
+        config.settings
+      );
+      return { ...item, calc };
+    });
+  }, [config.rates, config.destinations, config.settings]);
+
   const generalWaUrl = buildWhatsAppUrl(
     config.settings.whatsapp_admin,
     `Halo Admin ${config.settings.company_name}, saya ingin konsultasi layanan impor / forwarder ke Kalimantan Barat.`
@@ -73,48 +217,55 @@ export default function LandingClient({ config }: LandingClientProps) {
     <div className="min-h-screen flex flex-col">
       <Navbar settings={config.settings} />
 
-      <main className="flex-1">
-        {/* HERO SECTION */}
-        <section className="bg-navy-grid text-white py-14 sm:py-20 lg:py-24 relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-7 space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-full bg-teal-500/15 border border-teal-400/30 px-3.5 py-1.5 text-xs font-semibold text-teal-200">
-                  <MapPin className="h-3.5 w-3.5 text-teal-300" />
-                  Spesialis Impor & Forwarder Kalimantan Barat — Direct ke Pontianak
-                </div>
+      <main id="main-content" className="flex-1">
+        <section className="bg-navy text-white py-12 sm:py-16 lg:py-20 border-b border-navy-light">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="font-mono text-xs text-teal-300 border-b border-white/15 pb-3 mb-8 flex flex-wrap items-center justify-between gap-2">
+              <span>0°00&apos;N 109°20&apos;E · HUB PONTIANAK, KALIMANTAN BARAT</span>
+              <span className="text-slate-300">
+                PENERUSAN AKTIF: 15 KOTA & KABUPATEN KALBAR
+              </span>
+            </div>
 
-                <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.15]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+              <div className="lg:col-span-7 space-y-6">
+                <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.14]">
                   Impor dari{' '}
                   <span className="text-teal-300">China, Malaysia & Singapura</span>{' '}
-                  Langsung Sampai Pontianak — Tanpa Hitung Ongkir Dua Kali
+                  Langsung Sampai Pontianak, Tanpa Hitung Ongkir Dua Kali
                 </h1>
 
-                <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl">
-                  Solusi satu pintu untuk UMKM & pebisnis Kalbar: jasa titip beli
-                  (1688, Taobao, Alibaba, Shopee MY), forwarder door-to-door
-                  dengan marking code, serta transfer RMB/MYR/SGD transparan
-                  dalam Rupiah.
+                <p className="text-slate-200 text-base sm:text-lg leading-relaxed max-w-2xl">
+                  Layanan satu pintu untuk pebisnis Kalimantan Barat: jasa titip
+                  beli (1688, Taobao, Alibaba, Shopee MY), forwarder door-to-door
+                  dengan marking code, dan transfer valas RMB, MYR, SGD dalam
+                  Rupiah.
                 </p>
 
-                {/* Inline Quick Tracking Bar */}
                 <form
                   onSubmit={handleQuickTrack}
-                  className="bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-2 flex flex-col sm:flex-row gap-2 max-w-xl"
+                  className="bg-navy-light border border-white/20 rounded-xl p-2 flex flex-col sm:flex-row gap-2 max-w-xl"
                 >
                   <div className="relative flex-1">
-                    <Search className="h-4 w-4 text-slate-300 absolute left-3.5 top-3.5" />
+                    <label htmlFor="hero-quick-resi" className="sr-only">
+                      Masukkan nomor resi atau marking code
+                    </label>
+                    <Search
+                      className="h-4 w-4 text-slate-500 absolute left-3.5 top-3.5"
+                      aria-hidden="true"
+                    />
                     <input
+                      id="hero-quick-resi"
                       type="text"
                       value={quickResi}
                       onChange={(e) => setQuickResi(e.target.value)}
-                      placeholder="Masukkan No. Resi / Marking Code (cth: IMP-PNK-2026-0001)"
-                      className="w-full rounded-xl bg-white text-slate-900 placeholder:text-slate-400 pl-10 pr-3.5 py-2.5 text-sm font-mono focus:outline-none"
+                      placeholder="No. Resi / Marking Code (cth: IMP-PNK-2026-0001)"
+                      className="w-full min-h-[44px] rounded-lg bg-white text-slate-900 placeholder:text-slate-500 pl-10 pr-3.5 py-2 text-sm font-mono"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="rounded-xl bg-amber hover:bg-amber-light text-white font-bold px-5 py-2.5 text-sm transition shrink-0"
+                    className="min-h-[44px] rounded-lg bg-amber-light hover:bg-amber text-navy hover:text-white font-bold px-5 text-sm transition-colors shrink-0"
                   >
                     Cek Resi Live
                   </button>
@@ -130,359 +281,339 @@ export default function LandingClient({ config }: LandingClientProps) {
                     <Link
                       key={code}
                       href={`/tracking?q=${code}`}
-                      className="font-mono px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-teal-200 transition"
+                      className="font-mono px-2.5 py-1.5 rounded-md bg-navy-light hover:bg-white/15 border border-white/15 text-teal-200 transition-colors"
                     >
                       {code}
                     </Link>
                   ))}
                 </div>
 
-                <div className="flex flex-wrap gap-3 pt-2">
+                <div className="flex flex-wrap gap-3 pt-1">
                   <a
                     href="#kalkulator"
-                    className="inline-flex items-center gap-2 rounded-xl bg-teal hover:bg-teal-light text-white font-bold px-6 py-3.5 text-sm shadow-lg transition"
+                    className="min-h-[48px] inline-flex items-center justify-center rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-6 text-sm transition-colors"
                   >
-                    <Calculator className="h-4 w-4" />
-                    Hitung Estimasi Ongkir All-In
+                    Hitung Ongkir All-In
                   </a>
                   <a
                     href="#rfq"
-                    className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold px-6 py-3.5 text-sm transition"
+                    className="min-h-[48px] inline-flex items-center justify-center rounded-lg bg-navy-light hover:bg-white/15 border border-white/25 text-white font-bold px-6 text-sm transition-colors"
                   >
-                    Ajukan Titip Beli / Order
-                    <ArrowRight className="h-4 w-4" />
+                    Ajukan Order / RFQ
                   </a>
                 </div>
               </div>
 
-              {/* Right Trust Stats Grid */}
-              <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-                {[
-                  {
-                    icon: Globe2,
-                    value: '3 Negara',
-                    label: 'China • Malaysia/Kuching • Singapura',
-                    accent: 'text-teal-300',
-                  },
-                  {
-                    icon: Truck,
-                    value: '2–4 Hari',
-                    label: 'Rute Darat Cepat Kuching–Entikong–PNK',
-                    accent: 'text-amber-300',
-                  },
-                  {
-                    icon: MapPin,
-                    value: '14 Kota/Kab',
-                    label: 'Penerusan ke Singkawang, Sintang, Ketapang',
-                    accent: 'text-sky-300',
-                  },
-                  {
-                    icon: ShieldCheck,
-                    value: '100% Rupiah',
-                    label: 'All-In Bea Cukai & Tanpa Biaya Tersembunyi',
-                    accent: 'text-emerald-300',
-                  },
-                ].map((stat) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div
-                      key={stat.value}
-                      className="rounded-2xl bg-white/10 backdrop-blur border border-white/15 p-5 space-y-2"
-                    >
-                      <Icon className={`h-6 w-6 ${stat.accent}`} />
-                      <div className="text-2xl font-extrabold">{stat.value}</div>
-                      <div className="text-xs text-slate-300 leading-relaxed">
-                        {stat.label}
+              <div className="lg:col-span-5 rounded-xl bg-navy-dark border border-white/15 p-5 sm:p-6">
+                <div className="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-white/15">
+                  <h2 className="text-sm font-bold text-white">
+                    Papan Tarif Dasar All-In ke Pontianak
+                  </h2>
+                  <span className="font-mono text-xs text-teal-300">
+                    LIVE DB
+                  </span>
+                </div>
+
+                {routeLedgers.every((g) => g.modes.length === 0) ? (
+                  <p className="text-sm text-slate-300 py-4">
+                    Tarif rute sedang disinkronkan. Gunakan formulir RFQ untuk
+                    penawaran langsung.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-white/10">
+                    {routeLedgers.map((group) => (
+                      <div key={group.origin} className="py-3 first:pt-0 last:pb-0">
+                        <div className="text-xs font-bold text-teal-300 mb-1.5">
+                          {group.label}
+                        </div>
+                        <div className="space-y-1.5">
+                          {group.modes.map((m) => (
+                            <div
+                              key={`${group.origin}-${m.methodLabel}`}
+                              className="flex items-baseline justify-between gap-3 text-xs"
+                            >
+                              <span className="text-slate-200">
+                                {m.methodLabel} ({m.etaMin}–{m.etaMax} hr)
+                              </span>
+                              <span className="font-mono font-bold text-white shrink-0">
+                                Mulai {formatIdr(m.minRate)}/{m.unit}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 pt-3 border-t border-white/15 text-xs text-slate-300 flex items-center justify-between gap-2">
+                  <span>Fee Transfer Valas Flat</span>
+                  <span className="font-mono font-bold text-amber-light">
+                    {formatIdr(config.settings.transfer_fee_idr)} / transaksi
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3 CORE SERVICES */}
-        <section id="layanan" className="py-16 lg:py-20 bg-slate-50">
+        <section id="layanan" className="py-16 lg:py-20 bg-paper">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                Layanan Terintegrasi
-              </span>
-              <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-navy tracking-tight">
-                Pilih Layanan Sesuai Kebutuhan Bisnis Anda
+            <div className="max-w-2xl mb-10">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-navy tracking-tight">
+                Layanan Sesuai Kebutuhan Impor Anda
               </h2>
-              <p className="mt-3 text-slate-600">
-                Dari pemula yang baru ingin belanja produk 1688 hingga toko
-                grosir yang sudah rutin kulakan dari supplier China, Kuching,
-                dan Singapura.
+              <p className="mt-3 text-slate-700 text-base">
+                Pilih layanan titip beli bagi pemula 1688 atau gunakan fasilitas
+                gudang forwarder dan transfer valas bila sudah memiliki supplier
+                tetap.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  id: 'titip_beli' as ServiceType,
-                  icon: ShoppingBag,
-                  badge: 'Paling Populer UMKM',
-                  title: 'Titip Beli / Sourcing (1688, Taobao, Alibaba)',
-                  desc: 'Cukup kirim link atau foto barang. Kami bantu nego supplier, bayar pakai RMB/MYR/SGD, QC di gudang asal, hingga tiba di Pontianak.',
-                  bullets: [
-                    'Penawaran HPP all-in transparan sebelum bayar',
-                    'Pembayaran aman pakai Rupiah (transfer bank lokal)',
-                    'Pengecekan jumlah & kondisi dasar di gudang transit',
-                  ],
-                  cta: 'Ajukan Titip Beli',
-                },
-                {
-                  id: 'forwarder' as ServiceType,
-                  icon: Package,
-                  badge: 'Untuk Grosir & Reseller',
-                  title: 'Jasa Forwarder (Kirim Saja + Marking Code)',
-                  desc: 'Sudah punya supplier sendiri? Pakai alamat gudang Guangzhou, Kuching, atau Tuas SG kami dengan Marking Code unik.',
-                  bullets: [
-                    'Jalur Udara (Kg), Laut LCL (CBM), & Darat Kuching',
-                    'Pengukuran akurat di gudang & invoice jelas',
-                    'Live tracking publik dari gudang asal ke Kalbar',
-                  ],
-                  cta: 'Booking Gudang Forwarder',
-                },
-                {
-                  id: 'transfer_valas' as ServiceType,
-                  icon: Banknote,
-                  badge: `Fee Flat ${formatIdr(config.settings.transfer_fee_idr)}`,
-                  title: 'Jasa Transfer Valas (RMB / MYR / SGD)',
-                  desc: 'Butuh bayar invoice supplier atau top-up Alipay / WeChat Pay / Maybank MY / DBS SG dengan kurs kompetitif dan bukti transfer resmi.',
-                  bullets: [
-                    'Kurs live kompetitif tanpa biaya tersembunyi',
-                    'Proses cepat dengan bukti resi transfer ke supplier',
-                    'Bisa digabung dengan pengiriman forwarder kami',
-                  ],
-                  cta: 'Ajukan Transfer Valas',
-                },
-              ].map((srv) => {
-                const Icon = srv.icon;
-                return (
-                  <div
-                    key={srv.id}
-                    className="rounded-2xl bg-white border border-slate-200 p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-teal-300 transition"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-4">
-                        <div className="h-12 w-12 rounded-xl bg-navy text-teal-300 flex items-center justify-center">
-                          <Icon className="h-6 w-6" />
-                        </div>
-                        <span className="px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-[11px] font-bold border border-teal-200">
-                          {srv.badge}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-navy">
-                        {srv.title}
-                      </h3>
-                      <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
-                        {srv.desc}
-                      </p>
-                      <ul className="mt-5 space-y-2.5">
-                        {srv.bullets.map((b) => (
-                          <li
-                            key={b}
-                            className="flex items-start gap-2 text-xs sm:text-sm text-slate-700"
-                          >
-                            <Check className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
-                            <span>{b}</span>
-                          </li>
-                        ))}
-                      </ul>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-7 rounded-xl bg-navy text-white p-6 sm:p-8 flex flex-col justify-between border border-navy-light">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <div className="h-11 w-11 rounded-lg bg-navy-light border border-white/15 text-teal-300 flex items-center justify-center">
+                      <ShoppingBag className="h-5 w-5" aria-hidden="true" />
                     </div>
+                    <span className="px-3 py-1 rounded-md bg-amber-light text-navy text-xs font-bold">
+                      Layanan Utama UMKM
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-extrabold">
+                    Titip Beli / Sourcing (1688, Taobao, Alibaba, Shopee MY)
+                  </h3>
+                  <p className="mt-3 text-sm text-slate-200 leading-relaxed max-w-xl">
+                    Cukup kirim tautan produk atau foto barang. Tim kami
+                    membantu konfirmasi stok ke supplier, pembayaran kurs lokal,
+                    pemeriksaan jumlah di gudang asal, pengurusan kepabeanan,
+                    hingga pengiriman ke Pontianak.
+                  </p>
+                  <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-200">
+                    {[
+                      'Penawaran HPP all-in Rupiah sebelum bayar',
+                      'Pembayaran aman via transfer bank Indonesia',
+                      'Pengecekan jumlah & kondisi dasar di gudang transit',
+                      'Bisa digabung untuk berbagai supplier sekaligus',
+                    ].map((b) => (
+                      <li key={b} className="flex items-start gap-2">
+                        <Check
+                          className="h-4 w-4 text-teal-300 shrink-0 mt-0.5"
+                          aria-hidden="true"
+                        />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
+                <div className="mt-8 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-4">
+                  <span className="text-xs font-mono text-teal-200">
+                    Fee jasa {config.settings.sourcing_fee_percent}% (min{' '}
+                    {formatIdr(config.settings.sourcing_fee_min_idr)})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => scrollToRfq('titip_beli')}
+                    className="min-h-[48px] rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-6 text-sm transition-colors"
+                  >
+                    Ajukan Titip Beli
+                  </button>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                <div className="flex-1 rounded-xl bg-white border border-slate-300 p-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-lg bg-paper border border-slate-300 text-navy flex items-center justify-center">
+                        <Package className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <h3 className="text-lg font-bold text-navy">
+                        Jasa Forwarder (Kirim Saja + Marking Code)
+                      </h3>
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      Sudah punya supplier sendiri? Pakai alamat gudang
+                      Guangzhou, Kuching, atau Tuas SG dengan Marking Code
+                      unik, lengkap dengan pengukuran akurat dan live tracking.
+                    </p>
+                  </div>
+                  <div className="mt-5">
                     <button
                       type="button"
-                      onClick={() => scrollToRfq(srv.id)}
-                      className="mt-7 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-navy hover:bg-navy-light text-white font-bold py-3 px-4 text-sm transition"
+                      onClick={() => scrollToRfq('forwarder')}
+                      className="w-full min-h-[44px] rounded-lg bg-navy hover:bg-navy-light text-white font-bold px-4 text-sm transition-colors"
                     >
-                      {srv.cta}
-                      <ArrowRight className="h-4 w-4" />
+                      Booking Gudang Forwarder
                     </button>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="flex-1 rounded-xl bg-white border border-slate-300 p-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-lg bg-paper border border-slate-300 text-navy flex items-center justify-center">
+                        <Banknote className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <h3 className="text-lg font-bold text-navy">
+                        Jasa Transfer Valas (RMB / MYR / SGD)
+                      </h3>
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      Titip bayar invoice supplier atau top-up Alipay, WeChat Pay,
+                      dan rekening bank Malaysia/Singapura dengan bukti transfer
+                      resmi.
+                    </p>
+                  </div>
+                  <div className="mt-5">
+                    <button
+                      type="button"
+                      onClick={() => scrollToRfq('transfer_valas')}
+                      className="w-full min-h-[44px] rounded-lg border border-navy text-navy hover:bg-navy hover:text-white font-bold px-4 text-sm transition-colors"
+                    >
+                      Ajukan Transfer Valas
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* KEUNGGULAN PONTIANAK & 3 ORIGIN ROUTES */}
-        <section id="keunggulan" className="py-16 lg:py-20 bg-white border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-5 space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                  Diferensiasi Khusus Kalimantan Barat
-                </span>
+        <section
+          id="keunggulan"
+          className="py-16 lg:py-20 bg-white border-t border-slate-200"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-5 space-y-3">
                 <h2 className="text-3xl font-extrabold text-navy tracking-tight">
-                  Kenapa Pebisnis Pontianak & Kalbar Memilih Kami?
+                  Kenapa Pebisnis Kalbar Tidak Harus Transit Jakarta?
                 </h2>
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                  Sebagian besar forwarder nasional hanya menghitung ongkir sampai
-                  gudang Jakarta atau Surabaya. Pebisnis Kalbar sering terkejut
-                  dengan biaya kargo domestik tambahan. Kami merancang tarif
-                  transparan hingga Pontianak & seluruh kabupaten Kalbar.
+                <p className="text-slate-700 text-sm sm:text-base leading-relaxed">
+                  Mayoritas forwarder nasional hanya menghitung tarif hingga
+                  gudang Jakarta atau Surabaya, sehingga pelaku usaha di
+                  Pontianak masih menanggung ongkir domestik lanjutan. Di sini,
+                  perhitungan dan tracking menyatu sampai tujuan akhir Kalbar.
                 </p>
               </div>
 
-              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-3">
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Forwarder Konvensional (Via Jakarta)
+              <div className="lg:col-span-7 overflow-hidden rounded-xl border border-slate-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-300">
+                  <div className="bg-paper p-6 space-y-3">
+                    <h3 className="text-sm font-bold text-slate-700">
+                      Forwarder Konvensional (Via Jakarta)
+                    </h3>
+                    <ul className="space-y-2 text-sm text-slate-700">
+                      <li>• Hitung ongkir dua kali (Asal ke JKT, lalu JKT ke PNK)</li>
+                      <li>• Harus mencari ekspedisi domestik sendiri</li>
+                      <li>• Tidak melayani jalur darat lintas batas Kuching</li>
+                      <li>• Estimasi HPP final baru jelas setelah kargo tiba</li>
+                    </ul>
                   </div>
-                  <ul className="space-y-2.5 text-sm text-slate-600">
-                    <li>• Hitung ongkir dua kali (China → JKT + JKT → PNK)</li>
-                    <li>• Harus cari ekspedisi domestik terpisah</li>
-                    <li>• Tidak melayani jalur darat lintas batas Kuching</li>
-                    <li>• Sulit estimasi HPP final sebelum barang tiba</li>
-                  </ul>
-                </div>
 
-                <div className="rounded-2xl border-2 border-teal-500 bg-teal-50/50 p-6 space-y-3 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-teal-800 flex items-center gap-1.5">
-                    <BadgeCheck className="h-4 w-4 text-teal-600" />
-                    Importir Pontianak (All-In Kalbar)
+                  <div className="bg-teal-50 p-6 space-y-3">
+                    <h3 className="text-sm font-bold text-navy">
+                      Importir Pontianak (All-In Kalbar)
+                    </h3>
+                    <ul className="space-y-2 text-sm text-navy font-medium">
+                      <li>• 1 kalkulasi all-in langsung sampai gudang Pontianak</li>
+                      <li>• Penerusan ke Singkawang, Sintang, Ketapang, dan 11 kabupaten lain</li>
+                      <li>• Tersedia jalur darat Kuching via Entikong / Aruk (2–4 hari)</li>
+                      <li>• Bisa ambil langsung di gudang Ahmad Yani II / Kubu Raya</li>
+                    </ul>
                   </div>
-                  <ul className="space-y-2.5 text-sm text-navy font-medium">
-                    <li>• 1 kalkulasi all-in langsung sampai gudang Pontianak</li>
-                    <li>• Terhubung penerusan Singkawang, Sintang, Ketapang, dll</li>
-                    <li>• Tersedia jalur cepat Kuching–Entikong/Aruk (2–4 hari)</li>
-                    <li>• Bisa pickup langsung di gudang Ahmad Yani II / Kubu Raya</li>
-                  </ul>
                 </div>
               </div>
             </div>
 
-            {/* 3 Origin Route Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  icon: Ship,
-                  origin: 'China (Guangzhou & Yiwu)',
-                  subtitle: 'Pusat Pabrik 1688, Taobao, Alibaba',
-                  routes: [
-                    'Udara Ekspres: Mulai Rp 185.000/kg (5–8 hari)',
-                    'Laut LCL Hemat: Mulai Rp 4.800.000/CBM (25–35 hari)',
-                  ],
-                  highlight: 'Cocok untuk mesin UMKM, fashion, kemasan, dan stok grosir.',
-                },
-                {
-                  icon: Truck,
-                  origin: 'Malaysia / Kuching',
-                  subtitle: 'Rute Unggulan Lintas Batas Kalbar',
-                  routes: [
-                    'Darat Entikong / Aruk: Mulai Rp 38.000/kg (2–4 hari)',
-                    'Darat LCL: Mulai Rp 2.400.000/CBM • Udara KL: Rp 115.000/kg',
-                  ],
-                  highlight: 'Rute tercepat untuk produk Shopee MY, kuliner kemasan, & grosir Sarawak.',
-                },
-                {
-                  icon: Plane,
-                  origin: 'Singapura (Tuas & Changi)',
-                  subtitle: 'Hub Regional Sparepart & Ritel',
-                  routes: [
-                    'Udara Ekspres: Mulai Rp 135.000/kg (3–5 hari)',
-                    'Laut LCL SG–PNK: Mulai Rp 3.400.000/CBM (7–14 hari)',
-                  ],
-                  highlight: 'Ideal untuk sparepart industri, alat teknis, & barang elektronik resmi.',
-                },
-              ].map((card) => {
-                const Icon = card.icon;
-                return (
-                  <div
-                    key={card.origin}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-6 space-y-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-navy text-teal-300 flex items-center justify-center">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-navy text-base">
-                          {card.origin}
-                        </h3>
-                        <p className="text-xs text-slate-500">{card.subtitle}</p>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 pt-2 text-xs font-medium text-slate-700">
-                      {card.routes.map((r) => (
-                        <div
-                          key={r}
-                          className="rounded-lg bg-white border border-slate-200 px-3 py-2"
-                        >
-                          {r}
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-600 pt-1">{card.highlight}</p>
-                  </div>
-                );
-              })}
+            <div className="rounded-xl border border-slate-300 overflow-x-auto bg-white">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-paper border-b border-slate-300 text-xs font-bold text-navy">
+                    <th className="px-5 py-3.5">Negara & Hub Asal</th>
+                    <th className="px-5 py-3.5">Jalur Tersedia</th>
+                    <th className="px-5 py-3.5">Estimasi Lead Time</th>
+                    <th className="px-5 py-3.5">Tarif Mulai</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {routeLedgers.flatMap((g) =>
+                    g.modes.map((m, idx) => (
+                      <tr key={`${g.origin}-${idx}`} className="hover:bg-slate-50">
+                        <td className="px-5 py-3.5 font-bold text-navy whitespace-nowrap">
+                          {g.label}
+                        </td>
+                        <td className="px-5 py-3.5 text-slate-800">
+                          {m.methodLabel}
+                        </td>
+                        <td className="px-5 py-3.5 font-mono text-slate-700 whitespace-nowrap">
+                          {m.etaMin}–{m.etaMax} hari
+                        </td>
+                        <td className="px-5 py-3.5 font-mono font-bold text-teal-dark whitespace-nowrap">
+                          {formatIdr(m.minRate)} / {m.unit}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
 
-        {/* INTERACTIVE CALCULATOR */}
         <CalculatorSection
           rates={config.rates}
           destinations={config.destinations}
           settings={config.settings}
+          scenarioPreset={scenarioPreset}
           onApplyToRfq={handleApplyToRfq}
         />
 
-        {/* 5-STEP WORKFLOW */}
-        <section className="py-16 bg-navy text-white">
+        <section className="py-16 bg-paper">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-300">
-                Alur Kerja Transparan
-              </span>
-              <h2 className="mt-2 text-3xl font-extrabold tracking-tight">
-                5 Langkah Mudah Impor Sampai Pontianak
+            <div className="max-w-2xl mb-10">
+              <h2 className="text-3xl font-extrabold text-navy tracking-tight">
+                Alur Kerja Transparan dalam 5 Tahap
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 border border-slate-300 rounded-xl bg-white divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
               {[
                 {
                   step: '01',
                   title: 'Hitung / Kirim Link',
-                  desc: 'Simulasikan biaya di kalkulator atau isi form RFQ dengan link produk / foto barang.',
+                  desc: 'Simulasikan biaya di kalkulator atau isi form RFQ dengan tautan produk dan foto barang.',
                 },
                 {
                   step: '02',
                   title: 'Penawaran All-In',
-                  desc: 'Tim kami verifikasi stok supplier & kirim rincian biaya final dalam Rupiah.',
+                  desc: 'Tim kami verifikasi stok supplier lalu kirim rincian biaya final dalam Rupiah.',
                 },
                 {
                   step: '03',
                   title: 'Beli & Masuk Gudang',
-                  desc: 'Pembayaran diproses, barang tiba di gudang Guangzhou / Kuching / SG & diukur.',
+                  desc: 'Pembayaran diproses, barang diterima di gudang Guangzhou, Kuching, atau Singapura lalu diukur.',
                 },
                 {
                   step: '04',
                   title: 'Kirim & Live Tracking',
-                  desc: 'Pantau pergerakan paket secara real-time melalui nomor resi IMP-PNK Anda.',
+                  desc: 'Pantau pergerakan paket secara langsung melalui nomor resi IMP-PNK Anda.',
                 },
                 {
                   step: '05',
                   title: 'Tiba di Pontianak',
-                  desc: 'Ambil di gudang kami atau teruskan ke alamat Anda di seluruh Kalbar.',
+                  desc: 'Ambil di gudang kami atau teruskan ke alamat Anda di seluruh Kalimantan Barat.',
                 },
               ].map((item) => (
-                <div
-                  key={item.step}
-                  className="rounded-2xl bg-white/5 border border-white/10 p-5 space-y-2"
-                >
-                  <div className="font-mono text-2xl font-extrabold text-teal-300">
+                <div key={item.step} className="p-5 space-y-2">
+                  <div className="font-mono text-xl font-extrabold text-teal-dark">
                     {item.step}
                   </div>
-                  <h3 className="font-bold text-base">{item.title}</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <h3 className="font-bold text-base text-navy">{item.title}</h3>
+                  <p className="text-xs text-slate-700 leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
@@ -491,10 +622,8 @@ export default function LandingClient({ config }: LandingClientProps) {
           </div>
         </section>
 
-        {/* WAREHOUSE & MARKING CODE GUIDE */}
         <WarehouseSection warehouses={config.warehouses} />
 
-        {/* RFQ & ORDER FORM */}
         <RfqFormSection
           destinations={config.destinations}
           prefill={prefill}
@@ -502,88 +631,94 @@ export default function LandingClient({ config }: LandingClientProps) {
           onClearPrefill={() => setPrefill(null)}
         />
 
-        {/* BUKTI PENGIRIMAN & TESTIMONI UMKM KALBAR */}
-        <section className="py-16 bg-slate-50 border-t border-slate-200">
+        <section className="py-16 bg-white border-t border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-                  Studi Kasus & Ilustrasi Pengiriman UMKM Kalbar
-                </span>
-                <h2 className="mt-2 text-3xl font-extrabold text-navy tracking-tight">
-                  Melayani Pengusaha Pontianak hingga Pedalaman Kalbar
+              <div className="max-w-2xl">
+                <h2 className="text-3xl font-extrabold text-navy tracking-tight">
+                  Contoh Simulasi Tarif Nyata ke Kalimantan Barat
                 </h2>
+                <p className="mt-2 text-sm text-slate-700">
+                  Dihitung otomatis dari tabel tarif aktif di database untuk
+                  membantu Anda memperkirakan ongkir sebelum order.
+                </p>
               </div>
               <Link
                 href="/tracking"
-                className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-700 hover:text-teal-800"
+                className="min-h-[44px] inline-flex items-center text-sm font-bold text-teal-dark hover:underline"
               >
-                Lihat Contoh Tracking Resi Aktif
-                <ArrowRight className="h-4 w-4" />
+                Buka Halaman Cek Resi Publik
               </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  city: 'Pontianak — Kedai Kopi & Roastery',
-                  route: 'Yiwu, China → Laut LCL (0.35 CBM)',
-                  quote:
-                    '“Biasanya bingung menghitung ongkir mesin grinder dari Guangzhou ke Jakarta lalu kargo kapal lagi ke Pontianak. Pakai kalkulator all-in ini, HPP per unit langsung jelas sebelum order.”',
-                  tag: 'Studi Kasus Titip Beli 1688',
-                },
-                {
-                  city: 'Singkawang — Grosir Fashion & Muslim',
-                  route: 'Kuching → Darat Entikong (28 Kg)',
-                  quote:
-                    '“Paket dari supplier Sarawak masuk gudang Kuching hari Senin, Kamis sudah sampai di Pontianak dan langsung diteruskan ke Singkawang. Sangat membantu perputaran stok cepat.”',
-                  tag: 'Studi Kasus Forwarder Lintas Batas',
-                },
-                {
-                  city: 'Sintang & Ketapang — Bengkel & Teknik',
-                  route: 'Singapura → Udara Ekspres (4.2 Kg)',
-                  quote:
-                    '“Sparepart sensor alat berat dari Singapura butuh cepat. Tinggal pantau lewat halaman Cek Resi, status bea cukai sampai tiba di Pontianak terupdate rapi.”',
-                  tag: 'Studi Kasus Kargo Udara SG–PNK',
-                },
-              ].map((card) => (
+              {liveScenarios.map((sc) => (
                 <div
-                  key={card.city}
-                  className="rounded-2xl bg-white border border-slate-200 p-6 space-y-4 shadow-sm"
+                  key={sc.id}
+                  className="rounded-xl bg-paper border border-slate-300 p-6 flex flex-col justify-between space-y-4"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 text-[11px] font-bold">
-                      {card.tag}
-                    </span>
-                    <Clock className="h-4 w-4 text-slate-400" />
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-navy text-base leading-snug">
+                      {sc.title}
+                    </h3>
+                    <p className="text-xs text-slate-700">{sc.subtitle}</p>
+
+                    {sc.calc ? (
+                      <div className="rounded-lg bg-white border border-slate-200 p-3.5 text-xs space-y-1.5">
+                        <div className="flex justify-between gap-2 text-slate-700">
+                          <span>Ongkir Internasional:</span>
+                          <span className="font-mono font-semibold text-navy">
+                            {formatIdr(sc.calc.internationalShippingIdr)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-2 text-slate-700">
+                          <span>Penerusan Kalbar:</span>
+                          <span className="font-mono font-semibold text-navy">
+                            {formatIdr(sc.calc.localKalbarFeeIdr)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-2 pt-2 border-t border-slate-200 font-bold text-navy">
+                          <span>Total Estimasi ({sc.calc.etaMinDays}–{sc.calc.etaMaxDays} hr):</span>
+                          <span className="font-mono text-teal-dark">
+                            {formatIdr(sc.calc.totalAllInIdr)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-600">
+                        Simulasi tersedia di kalkulator di atas.
+                      </p>
+                    )}
                   </div>
-                  <p className="text-sm text-slate-700 leading-relaxed italic">
-                    {card.quote}
-                  </p>
-                  <div className="pt-3 border-t border-slate-100">
-                    <div className="font-bold text-navy text-sm">{card.city}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{card.route}</div>
-                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => loadScenarioToCalculator(sc.preset)}
+                    className="w-full min-h-[44px] rounded-lg border border-navy text-navy hover:bg-navy hover:text-white font-bold text-xs transition-colors"
+                  >
+                    Muat di Kalkulator
+                  </button>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* FAQ */}
-        <FaqSection />
+        <FaqSection
+          whatsappAdmin={config.settings.whatsapp_admin}
+          companyName={config.settings.company_name}
+        />
       </main>
 
-      {/* FOOTER */}
       <footer className="bg-navy-dark text-slate-300 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-white font-bold text-lg">
-              <Ship className="h-5 w-5 text-teal-300" />
+              <Ship className="h-5 w-5 text-teal-300" aria-hidden="true" />
               {config.settings.company_name}
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Partner jasa impor, titip beli (1688/Taobao/Alibaba), transfer
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Partner jasa impor, titip beli (1688, Taobao, Alibaba), transfer
               valas, dan forwarder door-to-door dari China, Malaysia/Kuching, dan
               Singapura langsung ke Pontianak & Kalimantan Barat.
             </p>
@@ -593,16 +728,16 @@ export default function LandingClient({ config }: LandingClientProps) {
             <div className="text-white font-bold text-sm mb-2">
               Gudang & Operasional Pontianak
             </div>
-            <p className="text-slate-300">{config.settings.company_address}</p>
-            <p className="text-slate-400">{config.settings.operating_hours}</p>
+            <p className="text-slate-200">{config.settings.company_address}</p>
+            <p className="text-slate-300">{config.settings.operating_hours}</p>
             <div className="pt-2">
               <a
                 href={generalWaUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 text-xs transition"
+                className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 text-xs transition-colors"
               >
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 Chat WhatsApp Admin (+{config.settings.whatsapp_admin})
               </a>
             </div>
@@ -610,26 +745,26 @@ export default function LandingClient({ config }: LandingClientProps) {
 
           <div className="space-y-2 text-xs">
             <div className="text-white font-bold text-sm mb-2">Tautan Cepat</div>
-            <div className="flex flex-col gap-1.5">
-              <a href="#kalkulator" className="hover:text-teal-300">
+            <div className="flex flex-col gap-2">
+              <a href="#kalkulator" className="hover:text-teal-300 py-0.5">
                 Kalkulator Ongkir All-In Kalbar
               </a>
-              <a href="#gudang" className="hover:text-teal-300">
+              <a href="#gudang" className="hover:text-teal-300 py-0.5">
                 Alamat Gudang China, Malaysia & Singapura
               </a>
-              <a href="#rfq" className="hover:text-teal-300">
+              <a href="#rfq" className="hover:text-teal-300 py-0.5">
                 Form Request Quotation (RFQ)
               </a>
-              <Link href="/tracking" className="hover:text-teal-300">
+              <Link href="/tracking" className="hover:text-teal-300 py-0.5">
                 Cek Resi / Live Tracking Publik
               </Link>
-              <Link href="/admin" className="hover:text-teal-300">
+              <Link href="/admin" className="hover:text-teal-300 py-0.5">
                 Dashboard Admin Operasional
               </Link>
             </div>
           </div>
         </div>
-        <div className="border-t border-white/10 py-4 text-center text-xs text-slate-500">
+        <div className="border-t border-white/10 py-4 px-4 text-center text-xs text-slate-300">
           © {new Date().getFullYear()} {config.settings.company_name}. Melayani
           Kalimantan Barat.
         </div>

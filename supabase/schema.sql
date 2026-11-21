@@ -1,4 +1,4 @@
--- Importir Pontianak — Stage 1 MVP Database Schema & Seed Data
+-- Importir Pontianak | Stage 1 MVP Database Schema & Seed Data
 -- Prefixed with imp_ in schema public to coexist cleanly on shared Supabase Postgres.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -173,9 +173,7 @@ BEGIN
   END IF;
 END $$;
 
--- ============================================================
--- SEED DATA (Idempotent)
--- ============================================================
+-- Idempotent seed data
 
 INSERT INTO public.imp_settings (key, value, label) VALUES
   ('rate_rmb_idr', '2280', 'Kurs 1 RMB (Yuan) ke IDR'),
