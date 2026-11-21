@@ -1,29 +1,24 @@
 # DESIGN.md — Importir Pontianak
 
 ## Design Read
-Reading this as: B2B cross-border freight and sourcing platform for Pontianak and Kalimantan Barat business owners, in a structured maritime manifest and trade ledger style, dial ENERGY 2 / RHYTHM 3 / MOTION 1.
+Reading this as: B2B cross-border freight & sourcing platform for Pontianak and Kalimantan Barat business owners, following the user-supplied bright maritime port visual reference (sunny harbor hero, royal maritime blue `#1049B2` + deep navy `#0B2351`, bright ice surfaces `#F4F8FF`, and gold `#FACC15` action buttons), dial ENERGY 2 / RHYTHM 3 / MOTION 1.
 
 ## Three Dials
-- **ENERGY: 2 (Balanced commercial authority)** — Direct, confident freight headlines paired with real tariff tables and live calculator breakdowns rather than hype.
-- **RHYTHM: 3 (Asymmetric, varied composition)** — Alternates editorial 7/5 hero split with a live tariff manifest ledger, asymmetric flagship-plus-stacked service layout, structured comparison ledger, two-column interactive calculator, hairline 5-step process bar, warehouse directory, RFQ workbench, live Kalbar cost scenarios, and split FAQ.
-- **MOTION: 1 (Calm)** — Hover, active, and focus state transitions only. Zero infinite pulse animations, zero scroll-reveal theater, and full support for `prefers-reduced-motion: reduce`.
+- **ENERGY: 2 (Balanced commercial authority)** — Approachable sunlit maritime imagery paired with structured calculator breakdowns and real tariff data.
+- **RHYTHM: 3 (Varied composition)** — Alternates full-bleed maritime hero banner, 2×2 service grid paired beside the interactive Kalkulator Impor card, horizontal 4-step workflow strip, split dark tracking banner + route simulation carousel, warehouse directory, RFQ workbench, and FAQ.
+- **MOTION: 1 (Calm)** — Hover, focus, and accordion/carousel state transitions only; honors `prefers-reduced-motion: reduce`.
 
-## Color Palette (2 Core + 1 Accent + Warm Neutrals)
-- **Core 1 — Deep Kapuas Navy:** `#0B1F3A` (secondary dark surface `#122B4D`, deep footer `#071426`) — anchors trust, dark manifest tables, and high-contrast header/hero surfaces.
-- **Core 2 — Maritime Teal:** `#0F766E` (`teal`, 5.47:1 contrast with white text) and `#115E59` (`teal-dark`, 7.64:1) — primary interactive action color and selected-state border/highlight.
-- **Deliberate Accent — Cargo Ochre:** `#F59E0B` paired with `#0B1F3A` dark navy text (8.20:1 contrast) for primary quick-track submission, and `#B45309` with white text (5.02:1 contrast) for secondary urgency accents.
-- **Neutrals:** Warm Paper Canvas `#F6F5F1`, White `#FFFFFF`, Ink `#0F172A`, Secondary Ink `#334155`, Muted Ink `#475569` on light backgrounds (6.9:1+ contrast) and `#CBD5E1` on dark navy (11.2:1+ contrast).
+## Color Palette (WCAG AA/AAA Verified)
+- **Core 1 — Maritime Royal Blue & Deep Navy:** `#1049B2` (`brand`, 8.3:1 with white) and `#0B2351` (`navy`, 14.9:1 with white) for headers, active pills, icons, calculator header, and footer.
+- **Core 2 — Ice Blue Surface:** `#F4F8FF` (`ice`) and `#EEF5FF` for split bands and the calculator All-In summary panel, bordered by `#DCE6F5`.
+- **Deliberate Accent — Cargo Gold:** `#FACC15` (`gold`, hover `#EAB308`) paired with dark navy text `#0D224A` (10.7:1 contrast) on primary CTA buttons and destination pill badges.
+- **Channel Action — WhatsApp Green:** `#15803D` (`wa`, hover `#166534`) paired with white text (5.1:1 contrast) for the header WhatsApp pill and RFQ WhatsApp handoff.
 
 ## Typography
-- **UI & Headings:** `Plus Jakarta Sans` — geometric warmth and clear Indonesian/Latin legibility across dense rate tables and forms.
-- **Tabular Data & Codes:** `IBM Plex Mono` — selected for customs manifests, AWB tracking numbers (`IMP-PNK-...`), marking codes (`PNK-CN-...`), FX rates, and coordinates (`0°00'N 109°20'E`).
-
-## Identity Motif
-- Hairline-bordered maritime manifest strips (`0°00'N 109°20'E · HUB PONTIANAK`) and structured tabular tariff ledgers that clearly belong to a West Kalimantan cross-border forwarder.
+- **UI & Headings:** `Plus Jakarta Sans` — clean, warm geometric sans for Indonesian commercial copy.
+- **Tabular Numbers & Codes:** `IBM Plex Mono` — tabular currency values, FX rates, dimensions, and AWB tracking codes.
 
 ## Decision Log (R-31)
-- **Colors:** Kapuas Navy, Maritime Teal, and Cargo Ochre evoke river/sea port freight markings while maintaining WCAG AA contrast across light paper and dark surfaces.
-- **Layout:** Asymmetric 7/5 splits and varied section structures highlight real tariff data and live calculation tools instead of repetitive AI card grids.
-- **Typography:** Plus Jakarta Sans keeps Indonesian business copy scannable, while IBM Plex Mono aligns currency figures, weights, and tracking numbers cleanly.
-- **Spacing & Radii:** Sharp `rounded-md` / `rounded-lg` corners on inputs and ledger tables contrast with `rounded-xl` primary action containers to establish functional hierarchy without pill-overload.
-- **Motion:** Restricted to crisp focus/hover states so operational tools (calculator, tracking, admin) remain responsive and predictable on both desktop and mobile.
+- **Colors:** Derived directly from the user-supplied reference mockup (`#1049B2`, `#0B2351`, `#FACC15`, `#F4F8FF`, `#15803D`) with darkened green/text ink where needed to pass WCAG AA contrast.
+- **Layout:** Matches the reference composition (hero left + harbor banner right, 2×2 services + Kalkulator Impor side by side, 4-step workflow band, dark tracking banner + highlight carousel) while keeping real Warehouse, RFQ Form, and FAQ sections accessible below.
+- **Visual Assets:** Custom-generated harbor container ship hero banner and royal-navy tracking ship map banner stored in `public/images/`, paired with inline SVG ship brand logo and calculator illustration.

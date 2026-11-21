@@ -51,26 +51,33 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
     raw.replace(/\[MARKING_CODE\]/g, markingCode);
 
   return (
-    <section id="gudang" className="py-16 lg:py-20 bg-white border-t border-slate-200">
+    <section
+      id="gudang"
+      className="py-14 lg:py-16 bg-ice border-b border-[#E2EAF6]"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
           <div className="max-w-2xl">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-navy tracking-tight">
-              Alamat Gudang Transit & Panduan Marking Code
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-brand mb-1">
+              <span className="w-6 h-0.5 bg-brand rounded-full" aria-hidden="true" />
+              Gudang Transit Resmi
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+              Alamat Gudang &amp; Generator Marking Code
             </h2>
-            <p className="mt-3 text-slate-700 text-base">
+            <p className="mt-2 text-slate-700 text-sm sm:text-base">
               Untuk layanan Forwarder (Kirim Saja), minta supplier di China,
               Malaysia, atau Singapura menuliskan <strong>Marking Code</strong>{' '}
               pada label dus agar paket tidak tertukar saat konsolidasi.
             </p>
           </div>
 
-          <div className="bg-paper border border-slate-300 rounded-xl p-4 w-full lg:w-[400px]">
+          <div className="bg-white border border-[#DCE6F5] rounded-2xl p-4 shadow-sm w-full lg:w-[400px]">
             <label
               htmlFor="marking-shop-input"
-              className="block text-xs font-bold text-navy mb-2"
+              className="block text-xs font-bold text-ink mb-2"
             >
-              Generator Preview Marking Code (Ketik Inisial Toko Anda)
+              Preview Marking Code Anda (Ketik Inisial Toko)
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -79,14 +86,14 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
                 placeholder="Nama / Inisial Toko"
-                className="w-36 min-h-[44px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-teal"
+                className="w-36 min-h-[42px] rounded-xl border border-[#D4E2F6] bg-white px-3 py-2 text-sm font-semibold text-ink"
               />
-              <div className="flex-1 min-h-[44px] flex items-center justify-between rounded-md bg-navy text-teal-300 px-3 py-2 font-mono text-sm font-bold">
+              <div className="flex-1 min-h-[42px] flex items-center justify-between rounded-xl bg-navy text-gold px-3 py-2 font-mono text-sm font-bold">
                 <span className="truncate">{markingCode}</span>
                 <button
                   type="button"
                   onClick={() => copyText('marking', markingCode)}
-                  className="ml-2 min-h-[36px] min-w-[36px] inline-flex items-center justify-center rounded text-white hover:text-teal-200"
+                  className="ml-2 min-h-[34px] min-w-[34px] inline-flex items-center justify-center rounded-lg text-white hover:text-gold"
                   aria-label="Salin Marking Code"
                 >
                   {copiedKey === 'marking' ? (
@@ -114,10 +121,10 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                 role="tab"
                 aria-selected={active}
                 onClick={() => setSelectedOrigin(origin)}
-                className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${
+                className={`min-h-[44px] px-5 py-2 rounded-full text-sm font-bold border transition-colors ${
                   active
-                    ? 'bg-navy text-white border-navy'
-                    : 'bg-paper text-slate-800 border-slate-300 hover:border-teal'
+                    ? 'bg-brand text-white border-brand shadow-sm'
+                    : 'bg-white text-ink border-[#DCE6F5] hover:border-brand'
                 }`}
               >
                 {ORIGIN_LABELS[origin]}
@@ -127,31 +134,29 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
         </div>
 
         {activeWarehouse ? (
-          <div className="bg-white rounded-xl border border-slate-300 overflow-hidden">
-            <div className="bg-navy text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-white rounded-2xl border border-[#DCE6F5] shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-[#0C2B6B] to-[#1748A8] text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold">
                   {activeWarehouse.warehouse_name}
                 </h3>
-                <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
-                  <MapPin className="h-3.5 w-3.5 text-teal-300" aria-hidden="true" />
+                <p className="text-xs text-blue-100 flex items-center gap-1.5 mt-0.5">
+                  <MapPin className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
                   {activeWarehouse.city} · Kode Pos {activeWarehouse.postal_code}
                 </p>
               </div>
-              <div className="text-xs">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-navy-light border border-white/15 font-mono text-white">
-                  <Phone className="h-3.5 w-3.5 text-teal-300" aria-hidden="true" />
-                  {activeWarehouse.phone}
-                </span>
-              </div>
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/20 font-mono text-xs font-semibold text-white">
+                <Phone className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+                {activeWarehouse.phone}
+              </span>
             </div>
 
             <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-xs font-bold text-slate-700">
-                      Alamat Gudang Lokal (Untuk Diberikan ke Supplier)
+                    <span className="text-xs font-bold text-ink">
+                      Alamat Gudang Lokal (Untuk Supplier)
                     </span>
                     <button
                       type="button"
@@ -161,7 +166,7 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                           formatWithMarking(activeWarehouse.address_local)
                         )
                       }
-                      className="inline-flex items-center gap-1 min-h-[36px] px-2.5 rounded-md text-xs font-bold text-teal-dark hover:bg-teal-50"
+                      className="inline-flex items-center gap-1 min-h-[34px] px-2.5 rounded-lg text-xs font-bold text-brand hover:bg-brand-soft"
                       aria-label="Salin alamat gudang lokal"
                     >
                       {copiedKey === 'local' ? (
@@ -175,14 +180,14 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                       )}
                     </button>
                   </div>
-                  <div className="rounded-lg bg-paper border border-slate-300 p-4 text-sm font-medium text-slate-900 leading-relaxed">
+                  <div className="rounded-xl bg-ice border border-[#DCE6F5] p-4 text-sm font-medium text-ink leading-relaxed">
                     {formatWithMarking(activeWarehouse.address_local)}
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-xs font-bold text-slate-700">
+                    <span className="text-xs font-bold text-ink">
                       Alamat Versi Inggris / Referensi
                     </span>
                     <button
@@ -193,7 +198,7 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                           formatWithMarking(activeWarehouse.address_english)
                         )
                       }
-                      className="inline-flex items-center gap-1 min-h-[36px] px-2.5 rounded-md text-xs font-bold text-teal-dark hover:bg-teal-50"
+                      className="inline-flex items-center gap-1 min-h-[34px] px-2.5 rounded-lg text-xs font-bold text-brand hover:bg-brand-soft"
                       aria-label="Salin alamat gudang versi Inggris"
                     >
                       {copiedKey === 'eng' ? (
@@ -207,7 +212,7 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                       )}
                     </button>
                   </div>
-                  <div className="rounded-lg bg-paper border border-slate-200 p-3.5 text-xs text-slate-700 leading-relaxed">
+                  <div className="rounded-xl bg-ice border border-[#DCE6F5] p-3.5 text-xs text-slate-700 leading-relaxed">
                     {formatWithMarking(activeWarehouse.address_english)}
                   </div>
                 </div>
@@ -216,8 +221,8 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-xs font-bold text-slate-700">
-                      Format Nama Penerima & Label Dus
+                    <span className="text-xs font-bold text-ink">
+                      Format Nama Penerima &amp; Label Dus
                     </span>
                     <button
                       type="button"
@@ -227,7 +232,7 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                           formatWithMarking(activeWarehouse.recipient_format)
                         )
                       }
-                      className="inline-flex items-center gap-1 min-h-[36px] px-2.5 rounded-md text-xs font-bold text-teal-dark hover:bg-teal-50"
+                      className="inline-flex items-center gap-1 min-h-[34px] px-2.5 rounded-lg text-xs font-bold text-brand hover:bg-brand-soft"
                       aria-label="Salin format penerima"
                     >
                       {copiedKey === 'recipient' ? (
@@ -241,16 +246,16 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
                       )}
                     </button>
                   </div>
-                  <div className="rounded-lg bg-teal-50 border border-teal-300 p-4 flex items-center gap-3">
-                    <Tag className="h-5 w-5 text-teal-dark shrink-0" aria-hidden="true" />
-                    <span className="font-mono font-bold text-navy text-sm">
+                  <div className="rounded-xl bg-[#EEF5FF] border border-[#C6DAFA] p-4 flex items-center gap-3">
+                    <Tag className="h-5 w-5 text-brand shrink-0" aria-hidden="true" />
+                    <span className="font-mono font-bold text-ink text-sm">
                       {formatWithMarking(activeWarehouse.recipient_format)}
                     </span>
                   </div>
                 </div>
 
                 {activeWarehouse.notes && (
-                  <div className="rounded-lg bg-amber-50 border border-amber-300 p-4 text-xs text-amber-950 leading-relaxed">
+                  <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 text-xs text-amber-950 leading-relaxed">
                     <strong className="block mb-1">Instruksi Penting:</strong>
                     {activeWarehouse.notes}
                   </div>
@@ -258,7 +263,7 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
 
                 <div className="text-xs text-slate-700">
                   Jalur tersedia dari gudang ini:{' '}
-                  <span className="font-bold text-navy uppercase font-mono">
+                  <span className="font-bold text-brand uppercase font-mono">
                     {activeWarehouse.supported_methods.join(' | ')}
                   </span>
                 </div>
@@ -266,7 +271,7 @@ export default function WarehouseSection({ warehouses }: WarehouseSectionProps) 
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-300 bg-paper p-6 text-sm text-slate-700">
+          <div className="rounded-2xl border border-[#DCE6F5] bg-white p-6 text-sm text-slate-700">
             Data alamat gudang transit sedang dimuat atau belum tersedia.
           </div>
         )}

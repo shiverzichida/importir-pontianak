@@ -9,11 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        navy: {
-          DEFAULT: '#0B1F3A',
-          light: '#122B4D',
-          dark: '#071426',
+        brand: {
+          DEFAULT: '#1049B2',
+          dark: '#0C3B94',
+          soft: '#EEF4FC',
         },
+        navy: {
+          DEFAULT: '#0B2351',
+          light: '#14397E',
+          dark: '#081B3E',
+        },
+        ink: '#0D224A',
+        gold: {
+          DEFAULT: '#FACC15',
+          dark: '#EAB308',
+        },
+        wa: {
+          DEFAULT: '#15803D',
+          dark: '#166534',
+        },
+        ice: '#F4F8FF',
         teal: {
           DEFAULT: '#0F766E',
           light: '#14B8A6',
