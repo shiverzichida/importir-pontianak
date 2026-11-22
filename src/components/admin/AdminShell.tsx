@@ -12,6 +12,7 @@ import {
   Package,
   Settings,
   Ship,
+  ShoppingBag,
   X,
 } from 'lucide-react';
 import type { AdminSessionUser } from '@/lib/types';
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin/rfq', label: 'RFQ & Order', icon: FileSpreadsheet },
   { href: '/admin/shipments', label: 'Pengiriman & Tracking', icon: Package },
+  { href: '/admin/katalog', label: 'Katalog Produk', icon: ShoppingBag },
   { href: '/admin/settings', label: 'Tarif & Pengaturan', icon: Settings },
 ];
 

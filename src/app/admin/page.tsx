@@ -107,12 +107,18 @@ export default async function AdminOverviewPage() {
               Barat.
             </p>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <Link
               href="/admin/rfq"
               className="min-h-[44px] inline-flex items-center rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-navy font-bold px-4 text-xs transition-colors"
             >
               Kelola RFQ
+            </Link>
+            <Link
+              href="/admin/katalog"
+              className="min-h-[44px] inline-flex items-center rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-navy font-bold px-4 text-xs transition-colors"
+            >
+              Kelola Katalog
             </Link>
             <Link
               href="/admin/shipments"

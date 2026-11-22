@@ -460,5 +460,74 @@ INSERT INTO public.imp_tracking_events (id, shipment_id, status, title, location
   ('33333333-3333-4333-8333-333333330306', '22222222-2222-4222-8222-222222222203', 'delivered', 'Paket Diterima Customer', 'Pontianak Selatan', 'Diterima langsung oleh teknisi Bengkel Diesel Khatulistiwa dalam kondisi baik.', NOW() - INTERVAL '2 days')
 ON CONFLICT (id) DO NOTHING;
 
+-- 9. Curated China-to-Pontianak Import Product Catalog (LCL & FCL Consolidation)
+CREATE TABLE IF NOT EXISTS public.imp_catalog_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (
+    category IN (
+      'kopi_fb',
+      'walet',
+      'otomotif',
+      'fashion',
+      'grooming',
+      'bangunan',
+      'industri_kebun',
+      'rumah_tangga'
+    )
+  ),
+  cargo_category TEXT NOT NULL DEFAULT 'general' CHECK (
+    cargo_category IN ('general', 'fashion', 'elektronik', 'khusus')
+  ),
+  shipment_scale TEXT NOT NULL DEFAULT 'lcl' CHECK (
+    shipment_scale IN ('lcl', 'fcl', 'lcl_fcl')
+  ),
+  origin_hub TEXT NOT NULL DEFAULT 'Guangzhou / Yiwu',
+  image_url TEXT NOT NULL,
+  supplier_platform TEXT NOT NULL DEFAULT '1688.com',
+  supplier_url TEXT NOT NULL,
+  secondary_url TEXT,
+  mandarin_keyword TEXT,
+  price_rmb_min NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  price_rmb_max NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  unit_label TEXT NOT NULL DEFAULT 'pcs',
+  moq_note TEXT NOT NULL DEFAULT 'Min. 20 pcs',
+  estimated_cbm_note TEXT NOT NULL DEFAULT 'Mulai 0,1 CBM (LCL Gabungan)',
+  est_landed_idr_min BIGINT NOT NULL DEFAULT 0,
+  est_landed_idr_max BIGINT NOT NULL DEFAULT 0,
+  est_sell_idr_min BIGINT NOT NULL DEFAULT 0,
+  est_sell_idr_max BIGINT NOT NULL DEFAULT 0,
+  margin_note TEXT NOT NULL DEFAULT '100% - 200%',
+  why_pontianak TEXT NOT NULL,
+  lcl_tip TEXT,
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_imp_catalog_active_sort
+  ON public.imp_catalog_products(is_active, is_featured DESC, sort_order ASC, created_at DESC);
+
+ALTER TABLE public.imp_catalog_products ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'imp_catalog_products'
+      AND policyname = 'Public read active catalog products'
+  ) THEN
+    CREATE POLICY "Public read active catalog products"
+      ON public.imp_catalog_products
+      FOR SELECT
+      USING (is_active = TRUE);
+  END IF;
+END $$;
+
 -- Reload PostgREST schema cache so all new imp_* tables are immediately exposed via REST API
 NOTIFY pgrst, 'reload schema';

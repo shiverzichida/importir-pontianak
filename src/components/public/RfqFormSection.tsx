@@ -81,11 +81,20 @@ export default function RfqFormSection({
 
   useEffect(() => {
     if (!prefill) return;
+    if (prefill.service_type) {
+      setServiceType(prefill.service_type);
+    }
     setOriginCountry(prefill.origin_country);
     setShippingMethod(prefill.shipping_method);
     setCargoCategory(prefill.cargo_category);
     setDestinationCity(prefill.destination_city);
     setCurrency(prefill.currency);
+    if (prefill.product_name) {
+      setProductName(prefill.product_name);
+    }
+    if (prefill.product_url) {
+      setProductUrl(prefill.product_url);
+    }
     if (prefill.estimated_goods_value !== undefined) {
       setEstimatedGoodsValue(String(prefill.estimated_goods_value));
     }
@@ -98,7 +107,9 @@ export default function RfqFormSection({
     if (prefill.estimated_cbm !== undefined) {
       setEstimatedCbm(String(prefill.estimated_cbm));
     }
-    setEstimatedTotalIdr(prefill.estimated_total_idr);
+    setEstimatedTotalIdr(
+      prefill.estimated_total_idr > 0 ? prefill.estimated_total_idr : null
+    );
     setCustomerNotes((prev) => (prev ? prev : prefill.summary_note));
   }, [prefill]);
 
@@ -370,9 +381,15 @@ export default function RfqFormSection({
                       {dict.rfq.prefillBanner.title}
                     </strong>
                     <span>
-                      {prefill.summary_note} (
-                      {dict.rfq.prefillBanner.estimateTotalLabel}{' '}
-                      <strong>{formatIdr(prefill.estimated_total_idr)}</strong>)
+                      {prefill.summary_note}
+                      {prefill.estimated_total_idr > 0 && (
+                        <>
+                          {' '}
+                          ({dict.rfq.prefillBanner.estimateTotalLabel}{' '}
+                          <strong>{formatIdr(prefill.estimated_total_idr)}</strong>
+                          )
+                        </>
+                      )}
                     </span>
                   </div>
                   <button

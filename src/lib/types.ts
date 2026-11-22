@@ -200,6 +200,53 @@ export interface CalculatorPrefill {
   estimated_cbm?: number;
   estimated_total_idr: number;
   summary_note: string;
+  product_name?: string;
+  product_url?: string;
+  service_type?: ServiceType;
+}
+
+export type CatalogCategory =
+  | 'kopi_fb'
+  | 'walet'
+  | 'otomotif'
+  | 'fashion'
+  | 'grooming'
+  | 'bangunan'
+  | 'industri_kebun'
+  | 'rumah_tangga';
+
+export type ShipmentScale = 'lcl' | 'fcl' | 'lcl_fcl';
+
+export interface CatalogProduct {
+  id: string;
+  slug: string;
+  title: string;
+  category: CatalogCategory;
+  cargo_category: CargoCategory;
+  shipment_scale: ShipmentScale;
+  origin_hub: string;
+  image_url: string;
+  supplier_platform: string;
+  supplier_url: string;
+  secondary_url: string | null;
+  mandarin_keyword: string | null;
+  price_rmb_min: number;
+  price_rmb_max: number;
+  unit_label: string;
+  moq_note: string;
+  estimated_cbm_note: string;
+  est_landed_idr_min: number;
+  est_landed_idr_max: number;
+  est_sell_idr_min: number;
+  est_sell_idr_max: number;
+  margin_note: string;
+  why_pontianak: string;
+  lcl_tip: string | null;
+  is_featured: boolean;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AdminSessionUser {

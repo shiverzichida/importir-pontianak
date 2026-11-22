@@ -2,6 +2,7 @@ import { FX_SYNC_TTL_MS, syncFxRatesToDb } from './fx-sync';
 import { DEFAULT_PUBLIC_SETTINGS, mapSettingsRows } from './settings-mapper';
 import { getSupabaseAdmin } from './supabase';
 import type {
+  CatalogProduct,
   ImpSettingRow,
   KalbarDestination,
   PublicConfig,
@@ -84,5 +85,62 @@ export async function getPublicConfig(): Promise<PublicConfig> {
       destinations: [],
       warehouses: [],
     };
+  }
+}
+
+export async function getPublicCatalogProducts(options?: {
+  featuredOnly?: boolean;
+  limit?: number;
+}): Promise<CatalogProduct[]> {
+  try {
+    const supabase = getSupabaseAdmin();
+    let query = supabase
+      .from('imp_catalog_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('is_featured', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    if (options?.featuredOnly) {
+      query = query.eq('is_featured', true);
+    }
+    if (options?.limit && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to load catalog products:', error);
+      return [];
+    }
+    return (data as CatalogProduct[] | null) ?? [];
+  } catch (err) {
+    console.error('Catalog fetch exception:', err);
+    return [];
+  }
+}
+
+export async function getCatalogProductBySlug(
+  slug: string
+): Promise<CatalogProduct | null> {
+  const clean = slug.trim();
+  if (!clean) return null;
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from('imp_catalog_products')
+      .select('*')
+      .eq('slug', clean)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (error) {
+      console.error('Failed to fetch catalog product by slug:', error);
+      return null;
+    }
+    return (data as CatalogProduct | null) ?? null;
+  } catch (err) {
+    console.error('Catalog slug lookup error:', err);
+    return null;
   }
 }

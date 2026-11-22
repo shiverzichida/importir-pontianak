@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Container,
+  ExternalLink,
   FileText,
   Link2,
   MapPin,
@@ -18,11 +20,17 @@ import {
   PlayCircle,
   Ship,
   ShoppingCart,
+  TrendingUp,
   Warehouse,
 } from 'lucide-react';
 import { calculateImportEstimate } from '@/lib/calculator';
-import { formatIdr } from '@/lib/format';
-import type { CalculatorPrefill, PublicConfig, ServiceType } from '@/lib/types';
+import { formatIdr, formatNumberId } from '@/lib/format';
+import type {
+  CalculatorPrefill,
+  CatalogProduct,
+  PublicConfig,
+  ServiceType,
+} from '@/lib/types';
 import CalculatorSection, {
   type CalculatorScenarioPreset,
 } from './CalculatorSection';
@@ -35,6 +43,8 @@ import WarehouseSection from './WarehouseSection';
 
 interface LandingClientProps {
   config: PublicConfig;
+  featuredProducts?: CatalogProduct[];
+  initialCatalogProduct?: CatalogProduct | null;
 }
 
 const SCENARIO_SPECS: Array<{
@@ -102,11 +112,37 @@ const SCENARIO_SPECS: Array<{
 
 const WORKFLOW_ICONS = [Link2, FileText, PackageCheck, CheckCircle2] as const;
 
-export default function LandingClient({ config }: LandingClientProps) {
+export default function LandingClient({
+  config,
+  featuredProducts = [],
+  initialCatalogProduct = null,
+}: LandingClientProps) {
   const { dict } = useLanguage();
   const router = useRouter();
+  const defaultDest =
+    config.destinations[0]?.city_name || 'Pontianak (Ambil di Gudang)';
+
+  const toCatalogPrefill = (product: CatalogProduct): CalculatorPrefill => ({
+    service_type: 'titip_beli',
+    origin_country: 'china',
+    shipping_method: 'laut',
+    cargo_category: product.cargo_category,
+    destination_city: defaultDest,
+    currency: 'RMB',
+    product_name: product.title,
+    product_url: product.supplier_url,
+    estimated_goods_value:
+      Number(product.price_rmb_min) > 0
+        ? Number(product.price_rmb_min)
+        : undefined,
+    estimated_total_idr: 0,
+    summary_note: `Katalog LCL/FCL (${product.shipment_scale.toUpperCase()}): ${product.title} · ${product.estimated_cbm_note}`,
+  });
+
   const [quickResi, setQuickResi] = useState('');
-  const [prefill, setPrefill] = useState<CalculatorPrefill | null>(null);
+  const [prefill, setPrefill] = useState<CalculatorPrefill | null>(() =>
+    initialCatalogProduct ? toCatalogPrefill(initialCatalogProduct) : null
+  );
   const [serviceTrigger, setServiceTrigger] = useState<{
     service: ServiceType;
     nonce: number;
@@ -114,6 +150,15 @@ export default function LandingClient({ config }: LandingClientProps) {
   const [scenarioPreset, setScenarioPreset] =
     useState<CalculatorScenarioPreset | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    if (!initialCatalogProduct) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById('rfq');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [initialCatalogProduct]);
 
   const handleQuickTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -586,6 +631,147 @@ export default function LandingClient({ config }: LandingClientProps) {
             </div>
           </div>
         </section>
+
+        {/* CURATED CHINA PRODUCTS & LCL CONSOLIDATION SHOWCASE */}
+        {featuredProducts.length > 0 && (
+          <section className="py-12 lg:py-16 bg-ice border-b border-[#E2EAF6]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
+                <div className="max-w-2xl">
+                  <div className="inline-flex items-center gap-2 text-xs font-bold text-brand mb-1">
+                    <span
+                      className="w-6 h-0.5 bg-brand rounded-full"
+                      aria-hidden="true"
+                    />
+                    {dict.catalog.homeEyebrow}
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+                    {dict.catalog.homeHeading}
+                  </h2>
+                  <p className="mt-2 text-slate-700 text-sm sm:text-base">
+                    {dict.catalog.homeSubtitle}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-navy text-gold px-3.5 py-2 text-xs font-extrabold shadow-sm">
+                    <Container className="h-3.5 w-3.5" aria-hidden="true" />
+                    {dict.catalog.homeLclBadge}
+                  </span>
+                  <Link
+                    href="/katalog"
+                    className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-brand hover:bg-brand-dark text-white font-bold px-5 text-xs sm:text-sm shadow-sm transition-colors"
+                  >
+                    {dict.catalog.homeViewAllBtn}
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {featuredProducts.slice(0, 3).map((item) => (
+                  <article
+                    key={item.id}
+                    className="rounded-2xl bg-white border border-[#DCE6F5] shadow-sm hover:shadow-md hover:border-brand/60 transition-all overflow-hidden flex flex-col"
+                  >
+                    <div className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden">
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-navy/90 text-white shadow-sm">
+                        {dict.catalog.categoryLabels[item.category]}
+                      </span>
+                      <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/95 border border-[#DCE6F5] text-[11px] font-bold text-ink shadow-sm">
+                        {dict.catalog.scaleBadges[item.shipment_scale]}
+                      </span>
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div className="space-y-3">
+                        <h3 className="font-extrabold text-ink text-sm sm:text-base leading-snug line-clamp-2">
+                          {item.title}
+                        </h3>
+
+                        <div className="rounded-xl bg-ice border border-[#DCE6F5] p-3 text-xs space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-600">
+                              {dict.catalog.factoryPriceLabel}:
+                            </span>
+                            <span className="font-mono font-extrabold text-brand">
+                              RMB{' '}
+                              {formatNumberId(
+                                Number(item.price_rmb_min),
+                                Number(item.price_rmb_min) % 1 === 0 ? 0 : 2
+                              )}
+                              {Number(item.price_rmb_max) >
+                              Number(item.price_rmb_min)
+                                ? `-${formatNumberId(
+                                    Number(item.price_rmb_max),
+                                    Number(item.price_rmb_max) % 1 === 0 ? 0 : 2
+                                  )}`
+                                : ''}{' '}
+                              / {item.unit_label}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-600">
+                              {dict.catalog.estSellLabel}:
+                            </span>
+                            <span className="font-mono font-extrabold text-wa">
+                              {formatIdr(item.est_sell_idr_min)} -{' '}
+                              {formatIdr(item.est_sell_idr_max)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#DCE6F5]">
+                            <span className="inline-flex items-center gap-1 font-bold text-ink">
+                              <TrendingUp
+                                className="h-3.5 w-3.5 text-wa"
+                                aria-hidden="true"
+                              />
+                              {dict.catalog.marginLabel}:
+                            </span>
+                            <span className="font-mono font-extrabold text-wa">
+                              {item.margin_note}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                          {item.why_pontianak}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E6EEF9]">
+                        <a
+                          href={item.supplier_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-h-[42px] inline-flex items-center justify-center gap-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-bold px-3 text-xs transition-colors"
+                        >
+                          <ExternalLink
+                            className="h-3.5 w-3.5 shrink-0"
+                            aria-hidden="true"
+                          />
+                          {item.supplier_platform}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyToRfq(toCatalogPrefill(item))}
+                          className="min-h-[42px] inline-flex items-center justify-center gap-1 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold px-3 text-xs transition-colors"
+                        >
+                          {dict.catalog.joinLclBtn}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* FULL WORKING MVP SECTIONS */}
         <WarehouseSection warehouses={config.warehouses} />

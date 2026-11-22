@@ -1,10 +1,12 @@
 import type {
   CargoCategory,
+  CatalogCategory,
   CurrencyCode,
   OriginCountry,
   PaymentStatus,
   RfqShippingMethod,
   ServiceType,
+  ShipmentScale,
   ShipmentStatus,
 } from '@/lib/types';
 import type { Locale } from './types';
@@ -25,6 +27,7 @@ export interface Dictionary {
     mainNavAria: string;
     mobileNavAria: string;
     home: string;
+    catalog: string;
     services: string;
     calculator: string;
     tracking: string;
@@ -44,6 +47,7 @@ export interface Dictionary {
     };
     chatWhatsapp: string;
     chatWhatsappAdmin: string;
+    catalogMobile: string;
     calculatorMobile: string;
     trackingMobile: string;
     warehouseMobile: string;
@@ -329,6 +333,7 @@ export interface Dictionary {
     quickLink: string;
     links: {
       home: string;
+      catalog: string;
       services: string;
       calculator: string;
       warehouse: string;
@@ -347,6 +352,61 @@ export interface Dictionary {
     locationLabel: string;
     operatingHoursDefault: string;
     waGreeting: (companyName: string) => string;
+  };
+  catalog: {
+    homeEyebrow: string;
+    homeHeading: string;
+    homeSubtitle: string;
+    homeLclBadge: string;
+    homeViewAllBtn: string;
+    heroEyebrow: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroChips: [string, string, string];
+    heroCtaWaGroup: string;
+    heroCtaCalculator: string;
+    searchPlaceholder: string;
+    allCategories: string;
+    categoryLabels: Record<CatalogCategory, string>;
+    scaleFilters: {
+      all: string;
+      lcl: string;
+      fcl: string;
+    };
+    scaleBadges: Record<ShipmentScale, string>;
+    showingCount: (count: number) => string;
+    emptyTitle: string;
+    emptyDesc: string;
+    resetFilterBtn: string;
+    featuredBadge: string;
+    factoryPriceLabel: string;
+    liveIdrPrefix: string;
+    estLandedLabel: string;
+    estSellLabel: string;
+    marginLabel: string;
+    moqLabel: string;
+    volumeLabel: string;
+    whyPontianakLabel: string;
+    lclTipLabel: string;
+    openSupplierPrefix: string;
+    openAlibabaBtn: string;
+    keyword1688Label: string;
+    copyBtn: string;
+    copiedBtn: string;
+    joinLclBtn: string;
+    askWaBtn: string;
+    customTitle: string;
+    customDesc: string;
+    customRfqBtn: string;
+    customWaBtn: string;
+    waProductInquiry: (params: {
+      companyName: string;
+      title: string;
+      priceRmbRange: string;
+      url: string;
+    }) => string;
+    waCustomSourcing: (companyName: string) => string;
+    waGroupLclInquiry: (companyName: string) => string;
   };
   domain: {
     originLabels: Record<OriginCountry, string>;
@@ -418,6 +478,7 @@ const ID_DICTIONARY: Dictionary = {
     mainNavAria: 'Navigasi utama',
     mobileNavAria: 'Navigasi seluler',
     home: 'Beranda',
+    catalog: 'Katalog',
     services: 'Layanan',
     calculator: 'Kalkulator',
     tracking: 'Cek Resi',
@@ -437,6 +498,7 @@ const ID_DICTIONARY: Dictionary = {
     },
     chatWhatsapp: 'Chat WhatsApp',
     chatWhatsappAdmin: 'Chat WhatsApp Admin',
+    catalogMobile: 'Katalog Produk Impor China',
     calculatorMobile: 'Kalkulator Impor',
     trackingMobile: 'Cek Resi / Live Tracking',
     warehouseMobile: 'Gudang Transit & Marking Code',
@@ -851,6 +913,7 @@ const ID_DICTIONARY: Dictionary = {
     quickLink: 'Quick Link',
     links: {
       home: 'Beranda',
+      catalog: 'Katalog Produk',
       services: 'Layanan',
       calculator: 'Kalkulator',
       warehouse: 'Gudang Transit',
@@ -870,6 +933,86 @@ const ID_DICTIONARY: Dictionary = {
     operatingHoursDefault: 'Senin - Sabtu, 08:30 - 17:30 WIB',
     waGreeting: (companyName) =>
       `Halo Admin ${companyName}, saya ingin konsultasi layanan impor ke Pontianak / Kalimantan Barat.`,
+  },
+  catalog: {
+    homeEyebrow: 'Rekomendasi Produk & Konsolidasi LCL',
+    homeHeading: 'Produk China Bernilai Jual Tinggi di Pontianak',
+    homeSubtitle:
+      'Belanja bermacam produk langsung dari pabrik 1688/Alibaba dan kumpulkan bersama dalam 1 kontainer LCL menuju Pontianak, atau datangkan skala 1 kontainer penuh.',
+    homeLclBadge: 'Bisa Gabung 1 Kontainer LCL',
+    homeViewAllBtn: 'Buka Semua Katalog & Link 1688',
+    heroEyebrow: 'Kurasi Sourcing & Konsolidasi LCL Kontainer',
+    heroTitle: 'Katalog Produk China Pilihan untuk Pasar Pontianak',
+    heroSubtitle:
+      'Temukan barang pabrik murah bermargin tebal untuk dikirim eceran maupun digabung bersama di 1 kontainer LCL menuju Kalimantan Barat.',
+    heroChips: [
+      'Gabung Multi-Barang dalam 1 Kontainer LCL',
+      'Link Langsung 1688 & Alibaba Terkurasi',
+      'Update Rutin Produk Peluang Kalbar',
+    ],
+    heroCtaWaGroup: 'Konsultasi Gabung LCL via WA',
+    heroCtaCalculator: 'Hitung Ongkir di Kalkulator',
+    searchPlaceholder: 'Cari produk, sektor (walet, kopi, LED), atau kata kunci Mandarin...',
+    allCategories: 'Semua Kategori',
+    categoryLabels: {
+      kopi_fb: 'Alat Kopi & Kemasan F&B',
+      walet: 'Peralatan Walet',
+      otomotif: 'Lampu LED & Otomotif',
+      fashion: 'Fashion & Aksesori Yiwu',
+      grooming: 'Barbershop & Beauty Tools',
+      bangunan: 'Bangunan, WPC & Sanitary',
+      industri_kebun: 'Sawit, Kebun & Solar',
+      rumah_tangga: 'Rumah Tangga Grosir',
+    },
+    scaleFilters: {
+      all: 'Semua Skala',
+      lcl: 'Bisa LCL (Mulai 0,1 CBM)',
+      fcl: 'Cocok Skala Kontainer (FCL)',
+    },
+    scaleBadges: {
+      lcl: 'Bisa Konsolidasi LCL',
+      fcl: 'Rekomendasi 1 Kontainer (FCL)',
+      lcl_fcl: 'Fleksibel: LCL & 1 Kontainer FCL',
+    },
+    showingCount: (count) => `Menampilkan ${count} produk rekomendasi`,
+    emptyTitle: 'Produk tidak ditemukan pada filter ini',
+    emptyDesc:
+      'Coba reset filter pencarian atau hubungi tim sourcing kami untuk dicarikan link pabrik 1688 sesuai permintaan Anda.',
+    resetFilterBtn: 'Reset Filter Katalog',
+    featuredBadge: 'Pilihan Utama',
+    factoryPriceLabel: 'Harga Pabrik China',
+    liveIdrPrefix: 'Sekitar',
+    estLandedLabel: 'Est. Modal Sampai Pontianak',
+    estSellLabel: 'Pasaran Jual Kalbar',
+    marginLabel: 'Potensi Margin Kotor',
+    moqLabel: 'MOQ Supplier',
+    volumeLabel: 'Estimasi Muat / CBM',
+    whyPontianakLabel: 'Peluang di Pontianak & Kalbar:',
+    lclTipLabel: 'Tips Gabung Kontainer LCL:',
+    openSupplierPrefix: 'Buka Link',
+    openAlibabaBtn: 'Cari di Alibaba',
+    keyword1688Label: 'Kata Kunci 1688:',
+    copyBtn: 'Salin',
+    copiedBtn: 'Tersalin',
+    joinLclBtn: 'Ikut LCL / Ajukan Order',
+    askWaBtn: 'Tanya Admin WA',
+    customTitle: 'Belum Menemukan Barang yang Anda Cari?',
+    customDesc:
+      'Punya foto produk atau link supplier sendiri? Kirim ke tim kami untuk dibantu cek harga pabrik, negosiasi MOQ, dan digabungkan dalam jadwal kontainer LCL berikutnya ke Pontianak.',
+    customRfqBtn: 'Request Carikan Produk di RFQ',
+    customWaBtn: 'Chat Tim Sourcing via WhatsApp',
+    waProductInquiry: ({ companyName, title, priceRmbRange, url }) =>
+      [
+        `Halo Admin ${companyName}, saya tertarik produk dari Katalog untuk ikut LCL / penawaran:`,
+        `*Produk:* ${title}`,
+        `*Kisaran Harga Pabrik:* ${priceRmbRange}`,
+        `*Referensi Link:* ${url}`,
+        'Mohon info estimasi modal sampai Pontianak dan jadwal konsolidasi kontainer LCL berikutnya.',
+      ].join('\n'),
+    waCustomSourcing: (companyName) =>
+      `Halo Admin ${companyName}, saya ingin request mencarikan produk di China untuk digabung dalam pengiriman LCL ke Pontianak.`,
+    waGroupLclInquiry: (companyName) =>
+      `Halo Admin ${companyName}, saya ingin bertanya cara belanja bermacam barang lalu digabung dalam 1 kontainer LCL menuju Pontianak.`,
   },
   domain: {
     originLabels: {
@@ -974,6 +1117,7 @@ const EN_DICTIONARY: Dictionary = {
     mainNavAria: 'Main navigation',
     mobileNavAria: 'Mobile navigation',
     home: 'Home',
+    catalog: 'Catalog',
     services: 'Services',
     calculator: 'Calculator',
     tracking: 'Track Shipment',
@@ -993,6 +1137,7 @@ const EN_DICTIONARY: Dictionary = {
     },
     chatWhatsapp: 'Chat WhatsApp',
     chatWhatsappAdmin: 'Chat Admin on WhatsApp',
+    catalogMobile: 'China Product Catalog',
     calculatorMobile: 'Import Calculator',
     trackingMobile: 'Track Shipment / Live Tracking',
     warehouseMobile: 'Transit Warehouses & Marking Code',
@@ -1410,6 +1555,7 @@ const EN_DICTIONARY: Dictionary = {
     quickLink: 'Quick Links',
     links: {
       home: 'Home',
+      catalog: 'Product Catalog',
       services: 'Services',
       calculator: 'Calculator',
       warehouse: 'Transit Warehouses',
@@ -1429,6 +1575,86 @@ const EN_DICTIONARY: Dictionary = {
     operatingHoursDefault: 'Monday - Saturday, 08:30 - 17:30 WIB',
     waGreeting: (companyName) =>
       `Hello ${companyName} Admin, I would like to consult about import services to Pontianak / West Kalimantan.`,
+  },
+  catalog: {
+    homeEyebrow: 'Curated Sourcing & LCL Consolidation',
+    homeHeading: 'High-Margin China Products for Pontianak Market',
+    homeSubtitle:
+      'Source multiple items directly from 1688/Alibaba factories and consolidate them together into one shared LCL container to Pontianak, or scale up to a full container.',
+    homeLclBadge: 'Shared 1-Container LCL Ready',
+    homeViewAllBtn: 'Browse Full Catalog & 1688 Links',
+    heroEyebrow: 'Curated Product Sourcing & Shared LCL Container',
+    heroTitle: 'Curated China Wholesale Catalog for Pontianak Importers',
+    heroSubtitle:
+      'Discover factory-direct products with strong local resale margins in West Kalimantan, ready for LCL consolidation or full-container shipments.',
+    heroChips: [
+      'Consolidate Multi-Item Orders in 1 LCL Container',
+      'Direct Curated 1688 & Alibaba Supplier Links',
+      'Regularly Updated High-Demand Picks for Kalbar',
+    ],
+    heroCtaWaGroup: 'Join LCL Consolidation via WA',
+    heroCtaCalculator: 'Estimate Freight in Calculator',
+    searchPlaceholder: 'Search products, sectors (swiftlet, coffee, LED), or Mandarin keyword...',
+    allCategories: 'All Categories',
+    categoryLabels: {
+      kopi_fb: 'Coffee Gear & F&B Packaging',
+      walet: 'Swiftlet House Equipment',
+      otomotif: 'LED Lights & Automotive',
+      fashion: 'Yiwu Fashion & Accessories',
+      grooming: 'Barbershop & Beauty Tools',
+      bangunan: 'Building, WPC & Sanitary',
+      industri_kebun: 'Palm Oil, Farm & Solar',
+      rumah_tangga: 'Wholesale Homeware',
+    },
+    scaleFilters: {
+      all: 'All Scales',
+      lcl: 'LCL Ready (From 0.1 CBM)',
+      fcl: 'Full Container Ready (FCL)',
+    },
+    scaleBadges: {
+      lcl: 'LCL Consolidation Ready',
+      fcl: '1-Container (FCL) Pick',
+      lcl_fcl: 'Flexible: LCL & Full Container',
+    },
+    showingCount: (count) => `Showing ${count} curated recommendations`,
+    emptyTitle: 'No products match this filter',
+    emptyDesc:
+      'Try resetting your search filters or contact our sourcing team to locate direct 1688 factories for your product request.',
+    resetFilterBtn: 'Reset Catalog Filters',
+    featuredBadge: 'Top Pick',
+    factoryPriceLabel: 'China Factory Price',
+    liveIdrPrefix: 'Approx.',
+    estLandedLabel: 'Est. Landed to Pontianak',
+    estSellLabel: 'Kalbar Resale Range',
+    marginLabel: 'Est. Gross Margin',
+    moqLabel: 'Supplier MOQ',
+    volumeLabel: 'Load / CBM Note',
+    whyPontianakLabel: 'Pontianak & Kalbar Demand:',
+    lclTipLabel: 'LCL Consolidation Tip:',
+    openSupplierPrefix: 'Open on',
+    openAlibabaBtn: 'Check Alibaba',
+    keyword1688Label: '1688 Keyword:',
+    copyBtn: 'Copy',
+    copiedBtn: 'Copied',
+    joinLclBtn: 'Join LCL / Request Quote',
+    askWaBtn: 'Ask Admin on WA',
+    customTitle: "Didn't Find What You're Looking For?",
+    customDesc:
+      'Have your own product photo or supplier link? Send it to our sourcing team for factory price checks, MOQ negotiation, and consolidation in the next LCL container to Pontianak.',
+    customRfqBtn: 'Request Custom Sourcing in RFQ',
+    customWaBtn: 'Chat Sourcing Team on WhatsApp',
+    waProductInquiry: ({ companyName, title, priceRmbRange, url }) =>
+      [
+        `Hello ${companyName} Admin, I am interested in this Catalog item for LCL consolidation / quote:`,
+        `*Product:* ${title}`,
+        `*Factory Price Range:* ${priceRmbRange}`,
+        `*Reference Link:* ${url}`,
+        'Please share the landed cost estimate to Pontianak and the next LCL container schedule.',
+      ].join('\n'),
+    waCustomSourcing: (companyName) =>
+      `Hello ${companyName} Admin, I want to request product sourcing in China to consolidate into an LCL container to Pontianak.`,
+    waGroupLclInquiry: (companyName) =>
+      `Hello ${companyName} Admin, I would like to learn how to combine multiple factory purchases into one shared LCL container to Pontianak.`,
   },
   domain: {
     originLabels: {
@@ -1532,6 +1758,7 @@ const ZH_DICTIONARY: Dictionary = {
     mainNavAria: '主导航',
     mobileNavAria: '移动端导航',
     home: '首页',
+    catalog: '选品目录',
     services: '核心服务',
     calculator: '运费试算',
     tracking: '运单查询',
@@ -1551,6 +1778,7 @@ const ZH_DICTIONARY: Dictionary = {
     },
     chatWhatsapp: 'WhatsApp 咨询',
     chatWhatsappAdmin: '联系客服 WhatsApp',
+    catalogMobile: '中国高利润选品目录',
     calculatorMobile: '进口费用试算器',
     trackingMobile: '运单追踪 / 实时查询',
     warehouseMobile: '中转仓地址与唛头',
@@ -1956,6 +2184,7 @@ const ZH_DICTIONARY: Dictionary = {
     quickLink: '快捷导航',
     links: {
       home: '首页',
+      catalog: '选品目录',
       services: '核心服务',
       calculator: '运费试算',
       warehouse: '海外中转仓',
@@ -1975,6 +2204,86 @@ const ZH_DICTIONARY: Dictionary = {
     operatingHoursDefault: '周一至周六 08:30 - 17:30 WIB (西加时间)',
     waGreeting: (companyName) =>
       `您好 ${companyName} 客服，我想咨询发往坤甸 / 西加里曼丹的进口业务。`,
+  },
+  catalog: {
+    homeEyebrow: '高毛利爆品库 & 散货拼柜服务',
+    homeHeading: '直发坤甸高利润中国选品目录',
+    homeSubtitle:
+      '支持在 1688 / 阿里巴巴多店采购不同品类，汇集至我司广州仓统一装入同一条 LCL 拼箱发往坤甸，或升级整柜采购。',
+    homeLclBadge: '支持多品合并一条 LCL 拼柜',
+    homeViewAllBtn: '查看完整选品目录与 1688 链接',
+    heroEyebrow: '坤甸进口选品推荐 & LCL 拼柜专线',
+    heroTitle: '精选中国高性价比爆品货源目录',
+    heroSubtitle:
+      '专为西加里曼丹批发商与卖家精选低出厂价、高末端利润的货源，提供直接采购链接并支持拼柜集运直达坤甸。',
+    heroChips: [
+      '多品类混装合并入同一条 LCL 货柜',
+      '精选 1688 与阿里巴巴厂价货源链接',
+      '紧贴坤甸及西加市场定期上新推荐',
+    ],
+    heroCtaWaGroup: '咨询拼柜进群 (WhatsApp)',
+    heroCtaCalculator: '前往试算器估算运费',
+    searchPlaceholder: '搜索商品名、行业（燕窝、咖啡、LED）或 1688 中文关键词...',
+    allCategories: '全部分类',
+    categoryLabels: {
+      kopi_fb: '咖啡器具与餐饮包装',
+      walet: '燕屋专用设备与配件',
+      otomotif: 'LED 照明与汽摩配件',
+      fashion: '义乌饰品与潮流配饰',
+      grooming: '理发美发与美容工具',
+      bangunan: 'WPC 建材与现代卫浴',
+      industri_kebun: '油棕农具与太阳能工程',
+      rumah_tangga: '日用百货批发选品',
+    },
+    scaleFilters: {
+      all: '全部发货方式',
+      lcl: '支持 LCL 拼箱 (0.1方起)',
+      fcl: '适合整柜 FCL (20/40尺)',
+    },
+    scaleBadges: {
+      lcl: '支持 LCL 拼箱集运',
+      fcl: '建议整柜 (FCL) 订货',
+      lcl_fcl: '支持 LCL 拼箱及整柜',
+    },
+    showingCount: (count) => `共显示 ${count} 个精选高毛利选品`,
+    emptyTitle: '未找到符合条件的选品',
+    emptyDesc:
+      '请尝试清除筛选条件，或直接联系我们的采购顾问为您寻找指定的 1688 源头工厂链接。',
+    resetFilterBtn: '重置筛选条件',
+    featuredBadge: '重点推荐',
+    factoryPriceLabel: '中国出厂参考价',
+    liveIdrPrefix: '折合约',
+    estLandedLabel: '预估到坤甸含运费成本',
+    estSellLabel: '西加市场建议零售区间',
+    marginLabel: '参考毛利率空间',
+    moqLabel: '工厂起订量',
+    volumeLabel: '装柜体积参考',
+    whyPontianakLabel: '坤甸与西加市场需求亮点:',
+    lclTipLabel: 'LCL 拼柜采购建议:',
+    openSupplierPrefix: '打开货源',
+    openAlibabaBtn: 'Alibaba 同款搜索',
+    keyword1688Label: '1688 中文搜图关键词:',
+    copyBtn: '复制',
+    copiedBtn: '已复制',
+    joinLclBtn: '参与拼柜 / 提交询价',
+    askWaBtn: 'WhatsApp 咨询详情',
+    customTitle: '还没找到您想要采购的商品？',
+    customDesc:
+      '已有心仪商品图片或供应商链接？发送给我们，由专业买手团队帮您核价议价，并与下班开往坤甸的 LCL 货柜一同发运。',
+    customRfqBtn: '在 RFQ 表单提交找货需求',
+    customWaBtn: 'WhatsApp 联系选品找货团队',
+    waProductInquiry: ({ companyName, title, priceRmbRange, url }) =>
+      [
+        `您好 ${companyName} 客服，我想咨询选品目录中的以下商品并参与 LCL 拼柜报价：`,
+        `*商品名称:* ${title}`,
+        `*工厂参考价:* ${priceRmbRange}`,
+        `*参考链接:* ${url}`,
+        '请协助核算发往坤甸的预估到手价以及下一班 LCL 装柜排期。',
+      ].join('\n'),
+    waCustomSourcing: (companyName) =>
+      `您好 ${companyName} 客服，我想委托团队帮我在中国寻找指定货源，并通过坤甸 LCL 拼柜发运。`,
+    waGroupLclInquiry: (companyName) =>
+      `您好 ${companyName} 客服，我想了解如何将多笔中国采购混装进同一条 LCL 货柜发往坤甸。`,
   },
   domain: {
     originLabels: {

@@ -50,6 +50,12 @@ export default function PublicFooter({ settings }: PublicFooterProps) {
                 {dict.footer.links.home}
               </Link>
               <Link
+                href="/katalog"
+                className="hover:text-gold transition-colors"
+              >
+                {dict.footer.links.catalog}
+              </Link>
+              <Link
                 href="/#layanan"
                 className="hover:text-gold transition-colors"
               >

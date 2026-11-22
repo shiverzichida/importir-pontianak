@@ -20,6 +20,7 @@ import { useLanguage } from './LanguageProvider';
 interface NavbarProps {
   settings: PublicSettings;
   isTrackingPage?: boolean;
+  isCatalogPage?: boolean;
 }
 
 const LOCALE_OPTIONS: Array<{ code: Locale; label: string; aria: string }> = [
@@ -31,6 +32,7 @@ const LOCALE_OPTIONS: Array<{ code: Locale; label: string; aria: string }> = [
 export default function Navbar({
   settings,
   isTrackingPage = false,
+  isCatalogPage = false,
 }: NavbarProps) {
   const { locale, setLocale, dict } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -125,17 +127,28 @@ export default function Navbar({
 
         <nav
           aria-label={dict.nav.mainNavAria}
-          className="hidden lg:flex items-center gap-1 text-sm font-semibold text-ink"
+          className="hidden lg:flex items-center gap-0.5 text-sm font-semibold text-ink"
         >
           <Link
             href="/"
-            className={`px-3.5 py-2 rounded-full transition-colors whitespace-nowrap ${
-              !isTrackingPage
+            className={`px-3 py-2 rounded-full transition-colors whitespace-nowrap ${
+              !isTrackingPage && !isCatalogPage
                 ? 'bg-brand text-white'
                 : 'text-ink hover:bg-brand-soft hover:text-brand'
             }`}
           >
             {dict.nav.home}
+          </Link>
+
+          <Link
+            href="/katalog"
+            className={`px-3 py-2 rounded-full transition-colors whitespace-nowrap ${
+              isCatalogPage
+                ? 'bg-brand text-white'
+                : 'text-ink hover:bg-brand-soft hover:text-brand'
+            }`}
+          >
+            {dict.nav.catalog}
           </Link>
 
           {/* Layanan dropdown */}
@@ -152,7 +165,7 @@ export default function Navbar({
                   prev === 'layanan' ? null : 'layanan'
                 )
               }
-              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
             >
               {dict.nav.services}
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -195,14 +208,14 @@ export default function Navbar({
 
           <Link
             href="/#kalkulator"
-            className="px-3.5 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
+            className="px-3 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
           >
             {dict.nav.calculator}
           </Link>
 
           <Link
             href="/tracking"
-            className={`px-3.5 py-2 rounded-full transition-colors whitespace-nowrap ${
+            className={`px-3 py-2 rounded-full transition-colors whitespace-nowrap ${
               isTrackingPage
                 ? 'bg-brand text-white'
                 : 'text-ink hover:bg-brand-soft hover:text-brand'
@@ -225,7 +238,7 @@ export default function Navbar({
                   prev === 'panduan' ? null : 'panduan'
                 )
               }
-              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
             >
               {dict.nav.guide}
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
@@ -261,14 +274,14 @@ export default function Navbar({
 
           <Link
             href="/#rfq"
-            className="px-3.5 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
+            className="px-3 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
           >
             {dict.nav.rfq}
           </Link>
 
           <Link
             href="/#kontak"
-            className="px-3.5 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
+            className="hidden xl:inline-flex px-3 py-2 rounded-full text-ink hover:bg-brand-soft hover:text-brand transition-colors whitespace-nowrap"
           >
             {dict.nav.contact}
           </Link>
@@ -342,6 +355,13 @@ export default function Navbar({
             className="flex items-center min-h-[44px] px-3 rounded-lg text-sm font-semibold text-ink hover:bg-ice"
           >
             {dict.nav.home}
+          </Link>
+          <Link
+            href="/katalog"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center min-h-[44px] px-3 rounded-lg text-sm font-semibold text-brand hover:bg-ice"
+          >
+            {dict.nav.catalogMobile}
           </Link>
           <Link
             href="/#layanan"
