@@ -122,6 +122,7 @@ export default function CalculatorSection({
   const [includeGoodsValue, setIncludeGoodsValue] = useState<boolean>(false);
   const [goodsValueForeign, setGoodsValueForeign] = useState<string>('1500');
   const [quantity, setQuantity] = useState<string>('50');
+  const [targetSellPriceIdr, setTargetSellPriceIdr] = useState<string>('200000');
 
   useEffect(() => {
     if (!scenarioPreset) return;
@@ -168,6 +169,7 @@ export default function CalculatorSection({
         includeGoodsValue,
         goodsValueForeign: Number(goodsValueForeign) || 0,
         quantity: Number(quantity) || 0,
+        targetSellPriceIdr: Number(targetSellPriceIdr) || 0,
       },
       rates,
       destinations,
@@ -187,6 +189,7 @@ export default function CalculatorSection({
     includeGoodsValue,
     goodsValueForeign,
     quantity,
+    targetSellPriceIdr,
     rates,
     destinations,
     settings,
@@ -505,7 +508,7 @@ export default function CalculatorSection({
               </label>
 
               {includeGoodsValue && (
-                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                   <div>
                     <label
                       htmlFor="calc-goods-value"
@@ -535,6 +538,24 @@ export default function CalculatorSection({
                       min="1"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
+                      className="w-full min-h-[38px] rounded-lg border border-[#D4E2F6] bg-white px-2.5 py-1.5 text-xs font-mono text-ink"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="calc-target-sell"
+                      className="block text-[11px] font-semibold text-slate-700 mb-1"
+                    >
+                      {dict.calculator.inputs.targetSellLabel}
+                    </label>
+                    <input
+                      id="calc-target-sell"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      value={targetSellPriceIdr}
+                      onChange={(e) => setTargetSellPriceIdr(e.target.value)}
+                      placeholder={dict.calculator.inputs.targetSellPlaceholder}
                       className="w-full min-h-[38px] rounded-lg border border-[#D4E2F6] bg-white px-2.5 py-1.5 text-xs font-mono text-ink"
                     />
                   </div>
@@ -622,6 +643,57 @@ export default function CalculatorSection({
                     </>
                   )}
                 </div>
+
+                {includeGoodsValue &&
+                  result.profitPerUnitIdr !== null &&
+                  result.totalProfitIdr !== null && (
+                    <div
+                      className={`mt-2.5 rounded-xl border p-3 text-left text-[11px] space-y-1.5 ${
+                        result.profitPerUnitIdr >= 0
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                          : 'bg-rose-50 border-rose-200 text-rose-950'
+                      }`}
+                    >
+                      <div className="font-extrabold text-xs">
+                        {dict.calculator.summary.profitTitle}
+                      </div>
+                      {result.profitPerUnitIdr < 0 && (
+                        <div className="text-[10px] font-bold text-rose-700">
+                          {dict.calculator.summary.lossWarning}
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-2">
+                        <span>{dict.calculator.summary.profitPerUnit}</span>
+                        <span className="font-mono font-extrabold">
+                          {result.profitPerUnitIdr < 0 ? '-' : '+'}
+                          {formatIdr(Math.abs(result.profitPerUnitIdr))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span>{dict.calculator.summary.totalProfit}</span>
+                        <span className="font-mono font-extrabold">
+                          {result.totalProfitIdr < 0 ? '-' : '+'}
+                          {formatIdr(Math.abs(result.totalProfitIdr))}
+                        </span>
+                      </div>
+                      {result.roiPercent !== null && (
+                        <div className="flex justify-between gap-2">
+                          <span>{dict.calculator.summary.roiLabel}</span>
+                          <span className="font-mono font-bold">
+                            {result.roiPercent}%
+                          </span>
+                        </div>
+                      )}
+                      {result.breakEvenQty !== null && (
+                        <div className="flex justify-between gap-2 pt-1 border-t border-black/10 font-bold">
+                          <span>{dict.calculator.summary.breakEvenLabel}</span>
+                          <span className="font-mono">
+                            {result.breakEvenQty} {dict.calculator.summary.pcsUnit}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </>
             ) : (
               <div className="py-4 text-xs text-slate-600">

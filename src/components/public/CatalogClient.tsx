@@ -20,16 +20,19 @@ import { buildWhatsAppUrl, formatIdr, formatNumberId } from '@/lib/format';
 import type {
   CatalogCategory,
   CatalogProduct,
+  LclBatch,
   PublicConfig,
   ShipmentScale,
 } from '@/lib/types';
 import { useLanguage } from './LanguageProvider';
+import LclBatchSection from './LclBatchSection';
 import Navbar from './Navbar';
 import PublicFooter from './PublicFooter';
 
 interface CatalogClientProps {
   config: PublicConfig;
   products: CatalogProduct[];
+  batches?: LclBatch[];
 }
 
 const SCALE_BADGE_STYLE: Record<ShipmentScale, string> = {
@@ -59,6 +62,7 @@ function formatRmbRange(min: number, max: number): string {
 export default function CatalogClient({
   config,
   products,
+  batches = [],
 }: CatalogClientProps) {
   const { dict } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
@@ -211,6 +215,9 @@ export default function CatalogClient({
           </div>
         </section>
 
+        {/* Live Shared LCL Container Schedule Strip */}
+        <LclBatchSection batches={batches} settings={config.settings} compact />
+
         {/* Search, Scale & Category Filter Controls */}
         <section className="bg-white border-b border-[#DCE6F5] py-5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
@@ -354,12 +361,15 @@ export default function CatalogClient({
                       className="rounded-2xl bg-white border border-[#DCE6F5] shadow-sm hover:shadow-md hover:border-brand/60 transition-all overflow-hidden flex flex-col"
                     >
                       {/* Clean 4:3 Product Photo */}
-                      <div className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden">
+                      <Link
+                        href={`/katalog/${product.slug}`}
+                        className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden block group"
+                      >
                         <img
                           src={product.image_url}
                           alt={product.title}
                           loading="lazy"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                         />
                         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-navy/90 text-white shadow-sm">
@@ -378,7 +388,7 @@ export default function CatalogClient({
                         <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/95 border border-[#DCE6F5] text-[11px] font-bold text-ink shadow-sm">
                           {product.origin_hub}
                         </span>
-                      </div>
+                      </Link>
 
                       <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                         <div className="space-y-3.5">
@@ -400,9 +410,12 @@ export default function CatalogClient({
                               }
                             </span>
 
-                            <h2 className="text-base sm:text-lg font-extrabold text-ink leading-snug">
-                              {product.title}
-                            </h2>
+                            <Link
+                              href={`/katalog/${product.slug}`}
+                              className="block text-base sm:text-lg font-extrabold text-ink hover:text-brand leading-snug transition-colors"
+                            >
+                              <h2>{product.title}</h2>
+                            </Link>
                           </div>
 
                           {/* Economics Breakdown Box */}

@@ -2,6 +2,7 @@ import type {
   CargoCategory,
   CatalogCategory,
   CurrencyCode,
+  LclBatchStatus,
   OriginCountry,
   PaymentStatus,
   RfqShippingMethod,
@@ -131,6 +132,8 @@ export interface Dictionary {
       includeGoodsLabel: (currency: CurrencyCode, feePercent: number) => string;
       goodsValueLabel: (currency: CurrencyCode) => string;
       qtyLabel: string;
+      targetSellLabel: string;
+      targetSellPlaceholder: string;
     };
     categoryOptions: Record<CargoCategory, string>;
     applyRfqBtn: string;
@@ -148,6 +151,13 @@ export interface Dictionary {
       goodsLine: (amount: string, currency: CurrencyCode) => string;
       sourcingFee: string;
       hppPerUnit: (qty: string) => string;
+      profitTitle: string;
+      profitPerUnit: string;
+      totalProfit: string;
+      roiLabel: string;
+      breakEvenLabel: string;
+      pcsUnit: string;
+      lossWarning: string;
       updatingRates: string;
       consultWaBtn: string;
     };
@@ -408,6 +418,45 @@ export interface Dictionary {
     waCustomSourcing: (companyName: string) => string;
     waGroupLclInquiry: (companyName: string) => string;
   };
+  lclBatches: {
+    eyebrow: string;
+    heading: string;
+    subtitle: string;
+    statusLabels: Record<LclBatchStatus, string>;
+    filledLabel: string;
+    remainingLabel: string;
+    minSlotLabel: string;
+    cutoffLabel: string;
+    etdLabel: string;
+    etaLabel: string;
+    bookSlotBtn: string;
+    askSlotWaBtn: string;
+    waBookingTemplate: (params: {
+      companyName: string;
+      batchCode: string;
+      title: string;
+      remainingCbm: string;
+      cutoff: string;
+    }) => string;
+  };
+  catalogDetail: {
+    backToCatalog: string;
+    breadcrumbHome: string;
+    breadcrumbCatalog: string;
+    shareProductLabel: string;
+    copyLinkBtn: string;
+    linkCopiedBtn: string;
+    shareWaBtn: string;
+    shareWaText: (params: {
+      title: string;
+      priceRmbRange: string;
+      margin: string;
+      url: string;
+    }) => string;
+    relatedHeading: string;
+    lclSectionHeading: string;
+    notFoundTitle: string;
+  };
   domain: {
     originLabels: Record<OriginCountry, string>;
     methodLabels: Record<RfqShippingMethod, string>;
@@ -640,6 +689,8 @@ const ID_DICTIONARY: Dictionary = {
         `Hitung juga modal barang (${currency}) & fee titip beli ${feePercent}%`,
       goodsValueLabel: (currency) => `Nilai Barang (${currency})`,
       qtyLabel: 'Qty (Pcs)',
+      targetSellLabel: 'Target Harga Jual / pcs (Rp)',
+      targetSellPlaceholder: 'cth: 200000',
     },
     categoryOptions: {
       general: 'General Cargo',
@@ -657,6 +708,13 @@ const ID_DICTIONARY: Dictionary = {
       goodsLine: (amount, currency) => `Barang (${amount} ${currency}):`,
       sourcingFee: 'Fee Titip Beli:',
       hppPerUnit: (qty) => `HPP / pcs (${qty}):`,
+      profitTitle: 'Simulasi Profit Reseller',
+      profitPerUnit: 'Laba / pcs:',
+      totalProfit: 'Total Laba Kloter:',
+      roiLabel: 'Estimasi ROI:',
+      breakEvenLabel: 'Balik Modal di Penjualan:',
+      pcsUnit: 'pcs',
+      lossWarning: 'Harga jual masih di bawah HPP per pcs',
       updatingRates: 'Tarif rute sedang diperbarui.',
       consultWaBtn: 'Konsultasi Tarif via WhatsApp',
     },
@@ -1014,6 +1072,55 @@ const ID_DICTIONARY: Dictionary = {
     waGroupLclInquiry: (companyName) =>
       `Halo Admin ${companyName}, saya ingin bertanya cara belanja bermacam barang lalu digabung dalam 1 kontainer LCL menuju Pontianak.`,
   },
+  lclBatches: {
+    eyebrow: 'Jadwal & Kuota Kontainer LCL Bersama',
+    heading: 'Slot Kontainer LCL Aktif Menuju Pontianak',
+    subtitle:
+      'Pantau sisa kuota CBM kloter konsolidasi yang sedang dibuka. Anggota dapat menggabungkan berbagai barang 1688/Taobao dalam satu kontainer yang sama.',
+    statusLabels: {
+      open: 'Masih Dibuka',
+      almost_full: 'Hampir Penuh',
+      closed: 'Stuffing Ditutup',
+      sailing: 'Dalam Pelayaran',
+      arrived: 'Tiba di Pontianak',
+    },
+    filledLabel: 'Terisi',
+    remainingLabel: 'Sisa slot',
+    minSlotLabel: 'Min. masuk',
+    cutoffLabel: 'Tutup Barang',
+    etdLabel: 'Berangkat (ETD)',
+    etaLabel: 'Est. Tiba PNK',
+    bookSlotBtn: 'Booking Slot CBM',
+    askSlotWaBtn: 'Tanya Admin WA',
+    waBookingTemplate: ({ companyName, batchCode, title, remainingCbm, cutoff }) =>
+      [
+        `Halo Admin ${companyName}, saya ingin booking slot CBM untuk kloter LCL:`,
+        `*Kode Kloter:* ${batchCode}`,
+        `*Jadwal:* ${title}`,
+        `*Sisa Kuota:* ${remainingCbm} CBM (Cutoff: ${cutoff})`,
+        'Mohon info alamat marking code dan arahan pengiriman ke gudang.',
+      ].join('\n'),
+  },
+  catalogDetail: {
+    backToCatalog: 'Kembali ke Katalog',
+    breadcrumbHome: 'Beranda',
+    breadcrumbCatalog: 'Katalog Produk',
+    shareProductLabel: 'Bagikan Produk ke Grup WA:',
+    copyLinkBtn: 'Salin Link Produk',
+    linkCopiedBtn: 'Link Tersalin',
+    shareWaBtn: 'Share ke WhatsApp',
+    shareWaText: ({ title, priceRmbRange, margin, url }) =>
+      [
+        `Rekomendasi Peluang Impor Pontianak:`,
+        `*${title}*`,
+        `Harga Pabrik China: ${priceRmbRange}`,
+        `Potensi Margin Kalbar: ${margin}`,
+        `Lihat detail & link 1688 di sini: ${url}`,
+      ].join('\n'),
+    relatedHeading: 'Produk Katalog Menarik Lainnya',
+    lclSectionHeading: 'Jadwal Kontainer LCL untuk Barang Ini',
+    notFoundTitle: 'Produk tidak ditemukan',
+  },
   domain: {
     originLabels: {
       china: 'China (Guangzhou / Yiwu)',
@@ -1281,6 +1388,8 @@ const EN_DICTIONARY: Dictionary = {
         `Include goods value (${currency}) & ${feePercent}% sourcing fee`,
       goodsValueLabel: (currency) => `Goods Value (${currency})`,
       qtyLabel: 'Qty (Pcs)',
+      targetSellLabel: 'Target Resale Price / pc (Rp)',
+      targetSellPlaceholder: 'e.g. 200000',
     },
     categoryOptions: {
       general: 'General Cargo',
@@ -1298,6 +1407,13 @@ const EN_DICTIONARY: Dictionary = {
       goodsLine: (amount, currency) => `Goods (${amount} ${currency}):`,
       sourcingFee: 'Sourcing Fee:',
       hppPerUnit: (qty) => `Landed Cost / pc (${qty}):`,
+      profitTitle: 'Reseller Profit Simulation',
+      profitPerUnit: 'Profit / pc:',
+      totalProfit: 'Est. Batch Profit:',
+      roiLabel: 'Estimated ROI:',
+      breakEvenLabel: 'Break-Even Point:',
+      pcsUnit: 'pcs',
+      lossWarning: 'Target resale price is below landed cost per unit',
       updatingRates: 'Route rates are currently being updated.',
       consultWaBtn: 'Consult Rates via WhatsApp',
     },
@@ -1656,6 +1772,55 @@ const EN_DICTIONARY: Dictionary = {
     waGroupLclInquiry: (companyName) =>
       `Hello ${companyName} Admin, I would like to learn how to combine multiple factory purchases into one shared LCL container to Pontianak.`,
   },
+  lclBatches: {
+    eyebrow: 'Live Shared LCL Container Schedule',
+    heading: 'Active LCL Consolidation Slots to Pontianak',
+    subtitle:
+      'Track open CBM capacity on upcoming consolidation batches. Combine multi-factory 1688/Taobao orders together in one shared container.',
+    statusLabels: {
+      open: 'Open for Booking',
+      almost_full: 'Almost Full',
+      closed: 'Cutoff Closed',
+      sailing: 'Sailing / In Transit',
+      arrived: 'Arrived in Pontianak',
+    },
+    filledLabel: 'Filled',
+    remainingLabel: 'Available',
+    minSlotLabel: 'Min. slot',
+    cutoffLabel: 'Cutoff Date',
+    etdLabel: 'Est. Departure',
+    etaLabel: 'Est. Arrival PNK',
+    bookSlotBtn: 'Book CBM Slot',
+    askSlotWaBtn: 'Ask Admin WA',
+    waBookingTemplate: ({ companyName, batchCode, title, remainingCbm, cutoff }) =>
+      [
+        `Hello ${companyName} Admin, I would like to book an LCL CBM slot on:`,
+        `*Batch Code:* ${batchCode}`,
+        `*Schedule:* ${title}`,
+        `*Remaining Space:* ${remainingCbm} CBM (Cutoff: ${cutoff})`,
+        'Please share the Marking Code and warehouse delivery instructions.',
+      ].join('\n'),
+  },
+  catalogDetail: {
+    backToCatalog: 'Back to Catalog',
+    breadcrumbHome: 'Home',
+    breadcrumbCatalog: 'Product Catalog',
+    shareProductLabel: 'Share Product to WhatsApp Group:',
+    copyLinkBtn: 'Copy Product Link',
+    linkCopiedBtn: 'Link Copied',
+    shareWaBtn: 'Share via WhatsApp',
+    shareWaText: ({ title, priceRmbRange, margin, url }) =>
+      [
+        `Pontianak Import Opportunity:`,
+        `*${title}*`,
+        `China Factory Price: ${priceRmbRange}`,
+        `Est. West Kalimantan Margin: ${margin}`,
+        `Full specs & 1688 links: ${url}`,
+      ].join('\n'),
+    relatedHeading: 'Other High-Margin Import Picks',
+    lclSectionHeading: 'Upcoming LCL Container Slots for This Item',
+    notFoundTitle: 'Product not found',
+  },
   domain: {
     originLabels: {
       china: 'China (Guangzhou / Yiwu)',
@@ -1916,6 +2081,8 @@ const ZH_DICTIONARY: Dictionary = {
         `同时估算货值 (${currency}) 与代购服务费 ${feePercent}%`,
       goodsValueLabel: (currency) => `货物总价 (${currency})`,
       qtyLabel: '数量 (件)',
+      targetSellLabel: '计划当地售价 / 件 (Rp)',
+      targetSellPlaceholder: '例: 200000',
     },
     categoryOptions: {
       general: '普货 (General Cargo)',
@@ -1933,6 +2100,13 @@ const ZH_DICTIONARY: Dictionary = {
       goodsLine: (amount, currency) => `货物成本 (${amount} ${currency}):`,
       sourcingFee: '代购服务费:',
       hppPerUnit: (qty) => `单件综合到手价 (${qty} 件):`,
+      profitTitle: '转售利润与回本测算',
+      profitPerUnit: '单件净利润:',
+      totalProfit: '整批预计净利:',
+      roiLabel: '投资回报率 ROI:',
+      breakEvenLabel: '售出即回本数量:',
+      pcsUnit: '件',
+      lossWarning: '目标售价低于单件到手成本',
       updatingRates: '该线路运价正在更新中。',
       consultWaBtn: '通过 WhatsApp 咨询详细报价',
     },
@@ -2284,6 +2458,55 @@ const ZH_DICTIONARY: Dictionary = {
       `您好 ${companyName} 客服，我想委托团队帮我在中国寻找指定货源，并通过坤甸 LCL 拼柜发运。`,
     waGroupLclInquiry: (companyName) =>
       `您好 ${companyName} 客服，我想了解如何将多笔中国采购混装进同一条 LCL 货柜发往坤甸。`,
+  },
+  lclBatches: {
+    eyebrow: 'LCL 共享拼柜实时排期与余位',
+    heading: '发往坤甸的在途及开放预订 LCL 班次',
+    subtitle:
+      '实时查看各批次集装箱剩余方数 (CBM)。客户可将来自不同 1688 / 淘宝厂家的货物汇集在同一班货柜内合并发运。',
+    statusLabels: {
+      open: '开放订舱拼柜',
+      almost_full: '余位紧张',
+      closed: '已截单装柜',
+      sailing: '海运/在途运输',
+      arrived: '已抵达坤甸仓',
+    },
+    filledLabel: '已装柜',
+    remainingLabel: '剩余仓位',
+    minSlotLabel: '最低起订',
+    cutoffLabel: '截仓日期',
+    etdLabel: '预计开船/发车',
+    etaLabel: '预计抵坤甸',
+    bookSlotBtn: '预订 CBM 仓位',
+    askSlotWaBtn: 'WhatsApp 咨询仓位',
+    waBookingTemplate: ({ companyName, batchCode, title, remainingCbm, cutoff }) =>
+      [
+        `您好 ${companyName} 客服，我想预订以下 LCL 拼柜仓位：`,
+        `*班次代码:* ${batchCode}`,
+        `*航线排期:* ${title}`,
+        `*剩余容量:* ${remainingCbm} CBM (截仓时间: ${cutoff})`,
+        '请提供专属货物唛头及入仓发货指引。',
+      ].join('\n'),
+  },
+  catalogDetail: {
+    backToCatalog: '返回选品目录',
+    breadcrumbHome: '首页',
+    breadcrumbCatalog: '选品目录',
+    shareProductLabel: '分享该选品至 WhatsApp 群:',
+    copyLinkBtn: '复制产品链接',
+    linkCopiedBtn: '已复制链接',
+    shareWaBtn: '一键分享至 WhatsApp',
+    shareWaText: ({ title, priceRmbRange, margin, url }) =>
+      [
+        `坤甸高毛利进口选品推荐：`,
+        `*${title}*`,
+        `中国出厂参考价：${priceRmbRange}`,
+        `西加市场预估毛利：${margin}`,
+        `查看详情及 1688 采购链接：${url}`,
+      ].join('\n'),
+    relatedHeading: '更多热门高毛利选品',
+    lclSectionHeading: '可搭班发货的 LCL 拼柜排期',
+    notFoundTitle: '未找到该选品信息',
   },
   domain: {
     originLabels: {

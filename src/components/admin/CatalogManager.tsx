@@ -1,10 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
+  Check,
   ExternalLink,
   ImagePlus,
   Loader2,
+  MessageSquare,
   Pencil,
   Plus,
   RefreshCw,
@@ -13,11 +16,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { formatIdr, formatNumberId } from '@/lib/format';
+import { formatDateOnly, formatIdr, formatNumberId } from '@/lib/format';
 import type {
   CargoCategory,
   CatalogCategory,
   CatalogProduct,
+  LclBatch,
+  PublicConfig,
   ShipmentScale,
 } from '@/lib/types';
 
@@ -137,6 +142,33 @@ export default function CatalogManager() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [savingModal, setSavingModal] = useState(false);
+  const [rmbRate, setRmbRate] = useState<number>(2750);
+  const [openBatch, setOpenBatch] = useState<LclBatch | null>(null);
+  const [copiedBroadcastId, setCopiedBroadcastId] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/public-config', { cache: 'no-store' }).then((r) => r.json()),
+      fetch('/api/lcl-batches', { cache: 'no-store' }).then((r) => r.json()),
+    ])
+      .then(([cfgData, batchData]) => {
+        const cfg = cfgData as Partial<PublicConfig>;
+        if (cfg.settings?.rate_rmb_idr) {
+          setRmbRate(cfg.settings.rate_rmb_idr);
+        }
+        const batches = (batchData as { batches?: LclBatch[] })?.batches ?? [];
+        const chinaOpen =
+          batches.find(
+            (b) =>
+              b.origin_country === 'china' &&
+              (b.status === 'open' || b.status === 'almost_full')
+          ) || batches[0] || null;
+        setOpenBatch(chinaOpen);
+      })
+      .catch(() => {
+        // Keep defaults if auxiliary fetch fails
+      });
+  }, []);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -309,6 +341,66 @@ export default function CatalogManager() {
     }
   };
 
+  const copyBroadcastWa = async (product: CatalogProduct) => {
+    const siteOrigin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://importir-pontianak.43-173-33-53.sslip.io';
+    const rmbMin = Number(product.price_rmb_min);
+    const rmbMax = Number(product.price_rmb_max);
+    const rmbText =
+      rmbMax > rmbMin
+        ? `RMB ${formatNumberId(rmbMin, 2)}-${formatNumberId(rmbMax, 2)}`
+        : `RMB ${formatNumberId(rmbMin, 2)}`;
+    const idrMin = Math.round(rmbMin * rmbRate);
+    const idrMax = Math.round(rmbMax * rmbRate);
+    const idrText =
+      idrMax > idrMin
+        ? `${formatIdr(idrMin)}-${formatIdr(idrMax)}`
+        : formatIdr(idrMin);
+
+    const remainingCbm = openBatch
+      ? Math.max(
+          0,
+          Number(
+            (
+              Number(openBatch.capacity_cbm) - Number(openBatch.filled_cbm)
+            ).toFixed(1)
+          )
+        )
+      : 0;
+
+    const lines = [
+      `*REKOMENDASI PRODUK IMPOR PONTIANAK (LCL KONTAINER)*`,
+      ``,
+      `*${product.title}*`,
+      `Sentra Asal: ${product.origin_hub}`,
+      `Harga Pabrik: *${rmbText} / ${product.unit_label}* (~${idrText})`,
+      `Est. Modal Sampai PNK: ${formatIdr(product.est_landed_idr_min)}${
+        product.est_landed_idr_max > product.est_landed_idr_min
+          ? ` - ${formatIdr(product.est_landed_idr_max)}`
+          : ''
+      }`,
+      `Pasaran Jual Kalbar: *${formatIdr(product.est_sell_idr_min)} - ${formatIdr(product.est_sell_idr_max)}* (Margin ${product.margin_note})`,
+      `MOQ & Muat: ${product.moq_note} · ${product.estimated_cbm_note}`,
+      openBatch
+        ? `Kloter LCL Terdekat: *${openBatch.batch_code}* (Cutoff ${formatDateOnly(openBatch.cutoff_date)}, sisa slot ${formatNumberId(remainingCbm, 1)} CBM)`
+        : '',
+      ``,
+      `Lihat detail foto, link 1688/Alibaba & ikut gabung kontainer di sini:`,
+      `${siteOrigin}/katalog/${product.slug}`,
+    ].filter((line, idx, arr) => line !== '' || arr[idx - 1] !== '');
+
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      setCopiedBroadcastId(product.id);
+      setStatusMsg(`Caption WhatsApp untuk "${product.title}" berhasil disalin.`);
+      setTimeout(() => setCopiedBroadcastId(null), 2200);
+    } catch {
+      setErrorMsg('Browser tidak mengizinkan akses clipboard.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -445,11 +537,41 @@ export default function CatalogManager() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => copyBroadcastWa(product)}
+                    className="min-h-[34px] inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold bg-wa hover:bg-wa-dark text-white shadow-sm"
+                  >
+                    {copiedBroadcastId === product.id ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        Caption WA Tersalin!
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
+                        Salin Broadcast WA
+                      </>
+                    )}
+                  </button>
+
+                  <Link
+                    href={`/katalog/${product.slug}`}
+                    target="_blank"
+                    className="min-h-[34px] inline-flex items-center gap-1 px-2.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-navy border border-slate-300"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                    Lihat Halaman
+                  </Link>
+
                   <a
                     href={product.supplier_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-teal-dark hover:underline mr-2"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-teal-dark hover:underline mr-1"
                   >
                     <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                     {product.supplier_platform}

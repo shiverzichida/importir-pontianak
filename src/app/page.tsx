@@ -1,8 +1,10 @@
 import LandingClient from '@/components/public/LandingClient';
 import {
   getCatalogProductBySlug,
+  getLclBatchByCode,
   getPublicCatalogProducts,
   getPublicConfig,
+  getPublicLclBatches,
 } from '@/lib/public-data';
 
 export const dynamic = 'force-dynamic';
@@ -10,15 +12,24 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ catalog?: string }>;
+  searchParams: Promise<{ catalog?: string; batch?: string }>;
 }) {
   const params = await searchParams;
   const catalogSlug = (params.catalog || '').trim();
+  const batchCode = (params.batch || '').trim();
 
-  const [config, featuredCatalog, initialCatalogProduct] = await Promise.all([
+  const [
+    config,
+    featuredCatalog,
+    lclBatches,
+    initialCatalogProduct,
+    initialLclBatch,
+  ] = await Promise.all([
     getPublicConfig(),
     getPublicCatalogProducts({ featuredOnly: true, limit: 3 }),
+    getPublicLclBatches(3),
     catalogSlug ? getCatalogProductBySlug(catalogSlug) : Promise.resolve(null),
+    batchCode ? getLclBatchByCode(batchCode) : Promise.resolve(null),
   ]);
 
   const showcaseProducts =
@@ -30,7 +41,9 @@ export default async function HomePage({
     <LandingClient
       config={config}
       featuredProducts={showcaseProducts}
+      lclBatches={lclBatches}
       initialCatalogProduct={initialCatalogProduct}
+      initialLclBatch={initialLclBatch}
     />
   );
 }

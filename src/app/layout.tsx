@@ -25,6 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const dict = getDictionary(locale);
 
   return {
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL ||
+        'https://importir-pontianak.43-173-33-53.sslip.io'
+    ),
     title: dict.meta.title,
     description: dict.meta.description,
   };

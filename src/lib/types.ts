@@ -249,6 +249,35 @@ export interface CatalogProduct {
   updated_at: string;
 }
 
+export type LclBatchStatus =
+  | 'open'
+  | 'almost_full'
+  | 'closed'
+  | 'sailing'
+  | 'arrived';
+
+export interface LclBatch {
+  id: string;
+  batch_code: string;
+  title: string;
+  origin_country: OriginCountry;
+  origin_warehouse: string;
+  shipping_method: ShippingMethod;
+  container_size: string;
+  capacity_cbm: number;
+  filled_cbm: number;
+  min_slot_cbm: number;
+  cutoff_date: string;
+  etd_date: string | null;
+  eta_date: string | null;
+  status: LclBatchStatus;
+  notes: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AdminSessionUser {
   userId: string;
   email: string;

@@ -121,6 +121,12 @@ export default async function AdminOverviewPage() {
               Kelola Katalog
             </Link>
             <Link
+              href="/admin/kloter"
+              className="min-h-[44px] inline-flex items-center rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-navy font-bold px-4 text-xs transition-colors"
+            >
+              Kelola Kloter LCL
+            </Link>
+            <Link
               href="/admin/shipments"
               className="min-h-[44px] inline-flex items-center rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-4 text-xs transition-colors"
             >

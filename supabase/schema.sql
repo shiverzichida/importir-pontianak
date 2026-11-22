@@ -529,5 +529,55 @@ BEGIN
   END IF;
 END $$;
 
+-- 10. LCL Consolidated Container Batches (Jadwal & Kuota Kontainer LCL Bersama)
+CREATE TABLE IF NOT EXISTS public.imp_lcl_batches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  batch_code TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  origin_country TEXT NOT NULL DEFAULT 'china' CHECK (
+    origin_country IN ('china', 'malaysia', 'singapura')
+  ),
+  origin_warehouse TEXT NOT NULL DEFAULT 'Gudang Guangzhou',
+  shipping_method TEXT NOT NULL DEFAULT 'laut' CHECK (
+    shipping_method IN ('laut', 'darat', 'udara')
+  ),
+  container_size TEXT NOT NULL DEFAULT '20ft (28 CBM)',
+  capacity_cbm NUMERIC(10, 2) NOT NULL DEFAULT 28.00,
+  filled_cbm NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+  min_slot_cbm NUMERIC(10, 2) NOT NULL DEFAULT 0.10,
+  cutoff_date DATE NOT NULL,
+  etd_date DATE,
+  eta_date DATE,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (
+    status IN ('open', 'almost_full', 'closed', 'sailing', 'arrived')
+  ),
+  notes TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_imp_lcl_batches_active
+  ON public.imp_lcl_batches(is_active, sort_order ASC, cutoff_date ASC);
+
+ALTER TABLE public.imp_lcl_batches ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'imp_lcl_batches'
+      AND policyname = 'Public read active lcl batches'
+  ) THEN
+    CREATE POLICY "Public read active lcl batches"
+      ON public.imp_lcl_batches
+      FOR SELECT
+      USING (is_active = TRUE);
+  END IF;
+END $$;
+
 -- Reload PostgREST schema cache so all new imp_* tables are immediately exposed via REST API
 NOTIFY pgrst, 'reload schema';

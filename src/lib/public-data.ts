@@ -2,9 +2,11 @@ import { FX_SYNC_TTL_MS, syncFxRatesToDb } from './fx-sync';
 import { DEFAULT_PUBLIC_SETTINGS, mapSettingsRows } from './settings-mapper';
 import { getSupabaseAdmin } from './supabase';
 import type {
+  CatalogCategory,
   CatalogProduct,
   ImpSettingRow,
   KalbarDestination,
+  LclBatch,
   PublicConfig,
   ShippingRate,
   WarehouseInfo,
@@ -141,6 +143,87 @@ export async function getCatalogProductBySlug(
     return (data as CatalogProduct | null) ?? null;
   } catch (err) {
     console.error('Catalog slug lookup error:', err);
+    return null;
+  }
+}
+
+export async function getRelatedCatalogProducts(
+  excludeId: string,
+  category: CatalogCategory,
+  limit = 3
+): Promise<CatalogProduct[]> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from('imp_catalog_products')
+      .select('*')
+      .eq('is_active', true)
+      .neq('id', excludeId)
+      .order('is_featured', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .limit(12);
+
+    if (error || !data) {
+      return [];
+    }
+
+    const all = data as CatalogProduct[];
+    const sameCat = all.filter((p) => p.category === category);
+    const others = all.filter((p) => p.category !== category);
+    return [...sameCat, ...others].slice(0, limit);
+  } catch (err) {
+    console.error('Related catalog fetch error:', err);
+    return [];
+  }
+}
+
+export async function getPublicLclBatches(limit?: number): Promise<LclBatch[]> {
+  try {
+    const supabase = getSupabaseAdmin();
+    let query = supabase
+      .from('imp_lcl_batches')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('cutoff_date', { ascending: true });
+
+    if (limit && limit > 0) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to load LCL batches:', error);
+      return [];
+    }
+    return (data as LclBatch[] | null) ?? [];
+  } catch (err) {
+    console.error('LCL batches fetch exception:', err);
+    return [];
+  }
+}
+
+export async function getLclBatchByCode(
+  code: string
+): Promise<LclBatch | null> {
+  const clean = code.trim().toUpperCase();
+  if (!clean) return null;
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from('imp_lcl_batches')
+      .select('*')
+      .eq('batch_code', clean)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Failed to load LCL batch by code:', error);
+      return null;
+    }
+    return (data as LclBatch | null) ?? null;
+  } catch (err) {
+    console.error('LCL batch lookup exception:', err);
     return null;
   }
 }

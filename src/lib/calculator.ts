@@ -24,6 +24,7 @@ export interface CalculatorInput {
   includeGoodsValue: boolean;
   goodsValueForeign: number;
   quantity: number;
+  targetSellPriceIdr?: number;
 }
 
 export interface CalculatorResult {
@@ -43,6 +44,11 @@ export interface CalculatorResult {
   sourcingFeeIdr: number;
   totalAllInIdr: number;
   hppPerUnitIdr: number | null;
+  profitPerUnitIdr: number | null;
+  totalRevenueIdr: number | null;
+  totalProfitIdr: number | null;
+  roiPercent: number | null;
+  breakEvenQty: number | null;
   etaMinDays: number;
   etaMaxDays: number;
 }
@@ -158,6 +164,24 @@ export function calculateImportEstimate(
   const qty = Math.max(0, Math.round(input.quantity || 0));
   const hppPerUnitIdr = qty > 0 ? Math.round(totalAllInIdr / qty) : null;
 
+  const targetSell = Math.max(0, Math.round(input.targetSellPriceIdr || 0));
+  let profitPerUnitIdr: number | null = null;
+  let totalRevenueIdr: number | null = null;
+  let totalProfitIdr: number | null = null;
+  let roiPercent: number | null = null;
+  let breakEvenQty: number | null = null;
+
+  if (input.includeGoodsValue && hppPerUnitIdr !== null && qty > 0 && targetSell > 0) {
+    profitPerUnitIdr = targetSell - hppPerUnitIdr;
+    totalRevenueIdr = targetSell * qty;
+    totalProfitIdr = totalRevenueIdr - totalAllInIdr;
+    roiPercent =
+      totalAllInIdr > 0
+        ? Number(((totalProfitIdr / totalAllInIdr) * 100).toFixed(1))
+        : null;
+    breakEvenQty = totalAllInIdr > 0 ? Math.ceil(totalAllInIdr / targetSell) : null;
+  }
+
   const extraEta = destination ? destination.extra_eta_days : 0;
 
   return {
@@ -177,6 +201,11 @@ export function calculateImportEstimate(
     sourcingFeeIdr,
     totalAllInIdr,
     hppPerUnitIdr,
+    profitPerUnitIdr,
+    totalRevenueIdr,
+    totalProfitIdr,
+    roiPercent,
+    breakEvenQty,
     etaMinDays: matchedRate.eta_min_days + extraEta,
     etaMaxDays: matchedRate.eta_max_days + extraEta,
   };

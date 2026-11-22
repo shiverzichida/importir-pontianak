@@ -28,6 +28,7 @@ import { formatIdr, formatNumberId } from '@/lib/format';
 import type {
   CalculatorPrefill,
   CatalogProduct,
+  LclBatch,
   PublicConfig,
   ServiceType,
 } from '@/lib/types';
@@ -36,6 +37,7 @@ import CalculatorSection, {
 } from './CalculatorSection';
 import FaqSection from './FaqSection';
 import { useLanguage } from './LanguageProvider';
+import LclBatchSection from './LclBatchSection';
 import Navbar from './Navbar';
 import PublicFooter from './PublicFooter';
 import RfqFormSection from './RfqFormSection';
@@ -44,7 +46,9 @@ import WarehouseSection from './WarehouseSection';
 interface LandingClientProps {
   config: PublicConfig;
   featuredProducts?: CatalogProduct[];
+  lclBatches?: LclBatch[];
   initialCatalogProduct?: CatalogProduct | null;
+  initialLclBatch?: LclBatch | null;
 }
 
 const SCENARIO_SPECS: Array<{
@@ -115,7 +119,9 @@ const WORKFLOW_ICONS = [Link2, FileText, PackageCheck, CheckCircle2] as const;
 export default function LandingClient({
   config,
   featuredProducts = [],
+  lclBatches = [],
   initialCatalogProduct = null,
+  initialLclBatch = null,
 }: LandingClientProps) {
   const { dict } = useLanguage();
   const router = useRouter();
@@ -139,10 +145,35 @@ export default function LandingClient({
     summary_note: `Katalog LCL/FCL (${product.shipment_scale.toUpperCase()}): ${product.title} · ${product.estimated_cbm_note}`,
   });
 
+  const toBatchPrefill = (batch: LclBatch): CalculatorPrefill => {
+    const remaining = Math.max(
+      0,
+      Number((Number(batch.capacity_cbm) - Number(batch.filled_cbm)).toFixed(2))
+    );
+    return {
+      service_type: 'forwarder',
+      origin_country: batch.origin_country,
+      shipping_method: batch.shipping_method,
+      cargo_category: 'general',
+      destination_city: defaultDest,
+      currency:
+        batch.origin_country === 'china'
+          ? 'RMB'
+          : batch.origin_country === 'malaysia'
+            ? 'MYR'
+            : 'SGD',
+      estimated_cbm: Number(batch.min_slot_cbm) || 0.1,
+      estimated_total_idr: 0,
+      summary_note: `Booking Slot Kloter ${batch.batch_code} (${batch.title}) · Cutoff ${batch.cutoff_date} · Sisa slot ${remaining} CBM`,
+    };
+  };
+
   const [quickResi, setQuickResi] = useState('');
-  const [prefill, setPrefill] = useState<CalculatorPrefill | null>(() =>
-    initialCatalogProduct ? toCatalogPrefill(initialCatalogProduct) : null
-  );
+  const [prefill, setPrefill] = useState<CalculatorPrefill | null>(() => {
+    if (initialCatalogProduct) return toCatalogPrefill(initialCatalogProduct);
+    if (initialLclBatch) return toBatchPrefill(initialLclBatch);
+    return null;
+  });
   const [serviceTrigger, setServiceTrigger] = useState<{
     service: ServiceType;
     nonce: number;
@@ -152,13 +183,13 @@ export default function LandingClient({
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
-    if (!initialCatalogProduct) return;
+    if (!initialCatalogProduct && !initialLclBatch) return;
     const timer = setTimeout(() => {
       const el = document.getElementById('rfq');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }, 150);
     return () => clearTimeout(timer);
-  }, [initialCatalogProduct]);
+  }, [initialCatalogProduct, initialLclBatch]);
 
   const handleQuickTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -632,6 +663,13 @@ export default function LandingClient({
           </div>
         </section>
 
+        {/* LIVE SHARED LCL CONTAINER SCHEDULE */}
+        <LclBatchSection
+          batches={lclBatches}
+          settings={config.settings}
+          onSelectBatch={(batch) => handleApplyToRfq(toBatchPrefill(batch))}
+        />
+
         {/* CURATED CHINA PRODUCTS & LCL CONSOLIDATION SHOWCASE */}
         {featuredProducts.length > 0 && (
           <section className="py-12 lg:py-16 bg-ice border-b border-[#E2EAF6]">
@@ -674,12 +712,15 @@ export default function LandingClient({
                     key={item.id}
                     className="rounded-2xl bg-white border border-[#DCE6F5] shadow-sm hover:shadow-md hover:border-brand/60 transition-all overflow-hidden flex flex-col"
                   >
-                    <div className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden">
+                    <Link
+                      href={`/katalog/${item.slug}`}
+                      className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden block group"
+                    >
                       <img
                         src={item.image_url}
                         alt={item.title}
                         loading="lazy"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                       />
                       <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-navy/90 text-white shadow-sm">
                         {dict.catalog.categoryLabels[item.category]}
@@ -687,13 +728,16 @@ export default function LandingClient({
                       <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-white/95 border border-[#DCE6F5] text-[11px] font-bold text-ink shadow-sm">
                         {dict.catalog.scaleBadges[item.shipment_scale]}
                       </span>
-                    </div>
+                    </Link>
 
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div className="space-y-3">
-                        <h3 className="font-extrabold text-ink text-sm sm:text-base leading-snug line-clamp-2">
-                          {item.title}
-                        </h3>
+                        <Link
+                          href={`/katalog/${item.slug}`}
+                          className="block font-extrabold text-ink hover:text-brand text-sm sm:text-base leading-snug line-clamp-2 transition-colors"
+                        >
+                          <h3>{item.title}</h3>
+                        </Link>
 
                         <div className="rounded-xl bg-ice border border-[#DCE6F5] p-3 text-xs space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
