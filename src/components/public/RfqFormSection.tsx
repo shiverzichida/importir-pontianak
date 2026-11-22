@@ -1,55 +1,83 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   CheckCircle2,
+  Container,
   Copy,
   FileText,
   ImagePlus,
+  LayoutDashboard,
   Loader2,
+  Lock,
+  LogIn,
   MessageCircle,
   Send,
   Trash2,
+  UserCheck,
+  UserPlus,
   X,
 } from 'lucide-react';
 import { formatIdr } from '@/lib/format';
 import { formatDestinationLabel } from '@/lib/i18n/dictionaries';
+import { getPortalDictionary } from '@/lib/i18n/portal-dictionaries';
+import { savePendingOrderPrefill } from '@/lib/order-prefill';
 import type {
   CalculatorPrefill,
   CargoCategory,
   CurrencyCode,
   KalbarDestination,
+  LclBatch,
   OriginCountry,
   RfqOrder,
   RfqShippingMethod,
   ServiceType,
 } from '@/lib/types';
+import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
 
 interface RfqFormSectionProps {
   destinations: KalbarDestination[];
+  lclBatches?: LclBatch[];
   prefill: CalculatorPrefill | null;
   serviceTrigger: { service: ServiceType; nonce: number } | null;
   onClearPrefill: () => void;
+  embedded?: boolean;
 }
 
 export default function RfqFormSection({
   destinations,
+  lclBatches = [],
   prefill,
   serviceTrigger,
   onClearPrefill,
+  embedded = false,
 }: RfqFormSectionProps) {
   const { locale, dict } = useLanguage();
+  const { customer } = useCustomerAuth();
+  const portal = getPortalDictionary(locale);
+
   const [serviceType, setServiceType] = useState<ServiceType>('titip_beli');
-  const [customerName, setCustomerName] = useState('');
-  const [customerWhatsapp, setCustomerWhatsapp] = useState('');
-  const [companyName, setCompanyName] = useState('');
+  const [customerName, setCustomerName] = useState(
+    () => customer?.fullName || ''
+  );
+  const [customerWhatsapp, setCustomerWhatsapp] = useState(
+    () => customer?.whatsapp || ''
+  );
+  const [companyName, setCompanyName] = useState(
+    () => customer?.companyName || ''
+  );
   const [destinationCity, setDestinationCity] = useState(
-    destinations[0]?.city_name || 'Pontianak (Ambil di Gudang)'
+    () =>
+      customer?.defaultDestinationCity ||
+      destinations[0]?.city_name ||
+      'Pontianak (Ambil di Gudang)'
   );
   const [originCountry, setOriginCountry] = useState<OriginCountry>('china');
   const [shippingMethod, setShippingMethod] = useState<RfqShippingMethod>('laut');
   const [cargoCategory, setCargoCategory] = useState<CargoCategory>('general');
+  const [lclBatchCode, setLclBatchCode] = useState<string>('');
   const [productUrl, setProductUrl] = useState('');
   const [productName, setProductName] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>('RMB');
@@ -69,6 +97,18 @@ export default function RfqFormSection({
     whatsapp_url: string;
   } | null>(null);
   const [copiedRfqCode, setCopiedRfqCode] = useState(false);
+
+  useEffect(() => {
+    if (!customer) return;
+    setCustomerName((prev) => prev || customer.fullName);
+    setCustomerWhatsapp((prev) => prev || customer.whatsapp);
+    setCompanyName((prev) => prev || customer.companyName || '');
+    setDestinationCity((prev) =>
+      prev && prev !== (destinations[0]?.city_name || 'Pontianak (Ambil di Gudang)')
+        ? prev
+        : customer.defaultDestinationCity || prev
+    );
+  }, [customer, destinations]);
 
   useEffect(() => {
     if (!serviceTrigger) return;
@@ -106,6 +146,9 @@ export default function RfqFormSection({
     }
     if (prefill.estimated_cbm !== undefined) {
       setEstimatedCbm(String(prefill.estimated_cbm));
+    }
+    if (prefill.lcl_batch_code) {
+      setLclBatchCode(prefill.lcl_batch_code);
     }
     setEstimatedTotalIdr(
       prefill.estimated_total_idr > 0 ? prefill.estimated_total_idr : null
@@ -167,6 +210,7 @@ export default function RfqFormSection({
           shipping_method:
             serviceType === 'transfer_valas' ? 'transfer_only' : shippingMethod,
           cargo_category: cargoCategory,
+          lcl_batch_code: lclBatchCode || null,
           product_url: productUrl || null,
           product_name: productName,
           product_photo_url: photoUrl,
@@ -205,12 +249,17 @@ export default function RfqFormSection({
     }
   };
 
+  const bookableBatches = lclBatches.filter(
+    (b) => b.status === 'open' || b.status === 'almost_full'
+  );
+
   const resetForm = () => {
     setSubmittedResult(null);
     setProductUrl('');
     setProductName('');
     setPhotoUrl(null);
     setCustomerNotes('');
+    setLclBatchCode('');
     setEstimatedTotalIdr(null);
     onClearPrefill();
   };
@@ -218,26 +267,132 @@ export default function RfqFormSection({
   return (
     <section
       id="rfq"
-      className="py-14 lg:py-16 bg-white border-b border-[#E2EAF6]"
+      className={
+        embedded
+          ? 'bg-transparent'
+          : 'py-14 lg:py-16 bg-white border-b border-[#E2EAF6]'
+      }
     >
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-8">
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-brand mb-1">
-            <span
-              className="w-6 h-0.5 bg-brand rounded-full"
-              aria-hidden="true"
-            />
-            {dict.rfq.eyebrow}
+      <div className={embedded ? 'w-full' : 'max-w-5xl mx-auto px-4 sm:px-6 lg:px-8'}>
+        {!embedded && (
+          <div className="max-w-2xl mb-8">
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-brand mb-1">
+              <span
+                className="w-6 h-0.5 bg-brand rounded-full"
+                aria-hidden="true"
+              />
+              {dict.rfq.eyebrow}
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
+              {dict.rfq.heading}
+            </h2>
+            <p className="mt-2 text-slate-700 text-sm sm:text-base">
+              {dict.rfq.subtitle}
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
-            {dict.rfq.heading}
-          </h2>
-          <p className="mt-2 text-slate-700 text-sm sm:text-base">
-            {dict.rfq.subtitle}
-          </p>
-        </div>
+        )}
 
-        {submittedResult ? (
+        {!customer ? (
+          <div className="bg-white rounded-2xl border border-[#DCE6F5] shadow-md overflow-hidden">
+            <div className="bg-gradient-to-r from-[#0C2B6B] to-[#1748A8] text-white px-6 py-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+                  <Lock className="h-4 w-4 text-gold" aria-hidden="true" />
+                </div>
+                <div>
+                  <div className="font-bold text-sm">{portal.rfqGate.badge}</div>
+                  <div className="text-xs text-blue-100">
+                    {dict.rfq.formHeader.title}
+                  </div>
+                </div>
+              </div>
+              <span className="hidden sm:inline-block rounded-full bg-gold text-ink px-3 py-1 text-xs font-extrabold">
+                {dict.rfq.formHeader.fastReplyBadge}
+              </span>
+            </div>
+
+            <div className="p-6 sm:p-10 space-y-6">
+              {prefill && (
+                <div className="rounded-xl bg-[#EEF5FF] border border-[#BBD2F8] px-4 py-3.5 text-xs text-ink space-y-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <strong className="block text-brand">
+                        {dict.rfq.prefillBanner.title}
+                      </strong>
+                      <span>
+                        {prefill.summary_note}
+                        {prefill.estimated_total_idr > 0 && (
+                          <>
+                            {' '}
+                            ({dict.rfq.prefillBanner.estimateTotalLabel}{' '}
+                            <strong>
+                              {formatIdr(prefill.estimated_total_idr)}
+                            </strong>
+                            )
+                          </>
+                        )}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onClearPrefill()}
+                      className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg text-brand hover:bg-white shrink-0"
+                      aria-label={dict.rfq.prefillBanner.removeAria}
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-600">
+                    {portal.rfqGate.prefillSavedHint}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2 max-w-2xl">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-ink">
+                  {portal.rfqGate.title}
+                </h3>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  {portal.rfqGate.subtitle}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {portal.rfqGate.benefitsList.map((benefit) => (
+                  <div
+                    key={benefit}
+                    className="rounded-xl bg-ice border border-[#DCE6F5] p-3.5 flex items-start gap-2.5 text-xs font-semibold text-ink"
+                  >
+                    <CheckCircle2
+                      className="h-4 w-4 text-wa shrink-0 mt-0.5"
+                      aria-hidden="true"
+                    />
+                    <span>{benefit}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                <Link
+                  href="/register?next=%2Fdashboard%2Forders%2Fnew"
+                  onClick={() => savePendingOrderPrefill(prefill)}
+                  className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-gold hover:bg-gold-dark text-ink font-extrabold px-6 text-sm shadow-sm transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  {portal.rfqGate.registerCta}
+                </Link>
+                <Link
+                  href="/login?next=%2Fdashboard%2Forders%2Fnew"
+                  onClick={() => savePendingOrderPrefill(prefill)}
+                  className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-navy hover:bg-navy-light text-white font-bold px-6 text-sm shadow-sm transition-colors"
+                >
+                  <LogIn className="h-4 w-4 text-gold" aria-hidden="true" />
+                  {portal.rfqGate.loginCta}
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : submittedResult ? (
           <div className="rounded-2xl border-2 border-wa bg-ice p-6 sm:p-10 text-center space-y-5 shadow-sm">
             <div className="mx-auto h-14 w-14 rounded-full bg-emerald-100 text-wa flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
@@ -278,6 +433,13 @@ export default function RfqFormSection({
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href="/dashboard/orders"
+                className="w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-navy hover:bg-navy-light text-white font-bold px-6 text-sm shadow-sm transition-colors"
+              >
+                <LayoutDashboard className="h-4 w-4 text-gold" aria-hidden="true" />
+                {portal.newOrder.successViewOrders}
+              </Link>
               <a
                 href={submittedResult.whatsapp_url}
                 target="_blank"
@@ -324,6 +486,25 @@ export default function RfqFormSection({
             </div>
 
             <div className="p-5 sm:p-8 space-y-6">
+              {/* Signed-in Member Info Banner */}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-xs text-emerald-950">
+                <span className="inline-flex items-center gap-2 font-bold">
+                  <UserCheck className="h-4 w-4 text-wa shrink-0" aria-hidden="true" />
+                  {portal.rfqGate.loggedInBadge(
+                    customer.memberCode,
+                    customer.fullName
+                  )}
+                </span>
+                {!embedded && (
+                  <Link
+                    href="/dashboard"
+                    className="font-extrabold text-brand hover:underline inline-flex items-center gap-1"
+                  >
+                    <LayoutDashboard className="h-3.5 w-3.5" aria-hidden="true" />
+                    {portal.rfqGate.viewMyDashboard}
+                  </Link>
+                )}
+              </div>
               <div>
                 <p className="block text-sm font-bold text-ink mb-2.5">
                   {dict.rfq.serviceSelector.label}
@@ -605,6 +786,45 @@ export default function RfqFormSection({
                   />
                 </div>
               </div>
+
+              {bookableBatches.length > 0 && serviceType !== 'transfer_valas' && (
+                <div>
+                  <label
+                    htmlFor="rfq-lcl-batch"
+                    className="block text-xs font-bold text-ink mb-1.5"
+                  >
+                    <Container
+                      className="h-3.5 w-3.5 inline mr-1.5 text-brand"
+                      aria-hidden="true"
+                    />
+                    {portal.rfqGate.lclBatchSelectLabel}
+                  </label>
+                  <select
+                    id="rfq-lcl-batch"
+                    value={lclBatchCode}
+                    onChange={(e) => setLclBatchCode(e.target.value)}
+                    className="w-full min-h-[44px] rounded-xl border border-[#D4E2F6] bg-white px-3.5 py-2 text-sm text-ink"
+                  >
+                    <option value="">{portal.rfqGate.lclBatchNoneOption}</option>
+                    {bookableBatches.map((batch) => {
+                      const remaining = Math.max(
+                        0,
+                        Number(
+                          (
+                            Number(batch.capacity_cbm) - Number(batch.filled_cbm)
+                          ).toFixed(1)
+                        )
+                      );
+                      return (
+                        <option key={batch.id} value={batch.batch_code}>
+                          {batch.batch_code} · {batch.title} (Sisa {remaining}{' '}
+                          CBM, Cutoff {batch.cutoff_date})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div>

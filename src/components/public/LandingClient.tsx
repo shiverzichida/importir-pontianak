@@ -25,6 +25,10 @@ import {
 } from 'lucide-react';
 import { calculateImportEstimate } from '@/lib/calculator';
 import { formatIdr, formatNumberId } from '@/lib/format';
+import {
+  catalogProductToPrefill,
+  lclBatchToPrefill,
+} from '@/lib/order-prefill';
 import type {
   CalculatorPrefill,
   CatalogProduct,
@@ -128,45 +132,11 @@ export default function LandingClient({
   const defaultDest =
     config.destinations[0]?.city_name || 'Pontianak (Ambil di Gudang)';
 
-  const toCatalogPrefill = (product: CatalogProduct): CalculatorPrefill => ({
-    service_type: 'titip_beli',
-    origin_country: 'china',
-    shipping_method: 'laut',
-    cargo_category: product.cargo_category,
-    destination_city: defaultDest,
-    currency: 'RMB',
-    product_name: product.title,
-    product_url: product.supplier_url,
-    estimated_goods_value:
-      Number(product.price_rmb_min) > 0
-        ? Number(product.price_rmb_min)
-        : undefined,
-    estimated_total_idr: 0,
-    summary_note: `Katalog LCL/FCL (${product.shipment_scale.toUpperCase()}): ${product.title} · ${product.estimated_cbm_note}`,
-  });
+  const toCatalogPrefill = (product: CatalogProduct): CalculatorPrefill =>
+    catalogProductToPrefill(product, defaultDest);
 
-  const toBatchPrefill = (batch: LclBatch): CalculatorPrefill => {
-    const remaining = Math.max(
-      0,
-      Number((Number(batch.capacity_cbm) - Number(batch.filled_cbm)).toFixed(2))
-    );
-    return {
-      service_type: 'forwarder',
-      origin_country: batch.origin_country,
-      shipping_method: batch.shipping_method,
-      cargo_category: 'general',
-      destination_city: defaultDest,
-      currency:
-        batch.origin_country === 'china'
-          ? 'RMB'
-          : batch.origin_country === 'malaysia'
-            ? 'MYR'
-            : 'SGD',
-      estimated_cbm: Number(batch.min_slot_cbm) || 0.1,
-      estimated_total_idr: 0,
-      summary_note: `Booking Slot Kloter ${batch.batch_code} (${batch.title}) · Cutoff ${batch.cutoff_date} · Sisa slot ${remaining} CBM`,
-    };
-  };
+  const toBatchPrefill = (batch: LclBatch): CalculatorPrefill =>
+    lclBatchToPrefill(batch, defaultDest);
 
   const [quickResi, setQuickResi] = useState('');
   const [prefill, setPrefill] = useState<CalculatorPrefill | null>(() => {
@@ -822,6 +792,7 @@ export default function LandingClient({
 
         <RfqFormSection
           destinations={config.destinations}
+          lclBatches={lclBatches}
           prefill={prefill}
           serviceTrigger={serviceTrigger}
           onClearPrefill={() => setPrefill(null)}

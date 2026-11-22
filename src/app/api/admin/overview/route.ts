@@ -18,6 +18,7 @@ export async function GET() {
       newRfqRes,
       activeShipmentsRes,
       completedShipmentsRes,
+      totalCustomersRes,
       latestRfqsRes,
       latestShipmentsRes,
     ] = await Promise.all([
@@ -37,6 +38,9 @@ export async function GET() {
         .select('id', { count: 'exact', head: true })
         .in('current_status', ['arrived_pontianak', 'out_for_delivery', 'delivered']),
       supabase
+        .from('imp_customers')
+        .select('id', { count: 'exact', head: true }),
+      supabase
         .from('imp_rfq_orders')
         .select('*')
         .order('created_at', { ascending: false })
@@ -54,6 +58,7 @@ export async function GET() {
         pendingRfq: newRfqRes.count ?? 0,
         activeShipments: activeShipmentsRes.count ?? 0,
         arrivedOrDelivered: completedShipmentsRes.count ?? 0,
+        totalCustomers: totalCustomersRes.count ?? 0,
       },
       latestRfqs: latestRfqsRes.data ?? [],
       latestShipments: latestShipmentsRes.data ?? [],

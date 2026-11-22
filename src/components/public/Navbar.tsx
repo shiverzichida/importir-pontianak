@@ -2,19 +2,24 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
-  ArrowRight,
   ChevronDown,
   Globe,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
   Menu,
   MessageCircle,
   ShieldCheck,
+  UserPlus,
   X,
 } from 'lucide-react';
 import { buildWhatsAppUrl, formatIdr } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/types';
 import type { PublicSettings } from '@/lib/types';
 import { BrandLogo } from './BrandLogo';
+import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
 
 interface NavbarProps {
@@ -35,10 +40,20 @@ export default function Navbar({
   isCatalogPage = false,
 }: NavbarProps) {
   const { locale, setLocale, dict } = useLanguage();
+  const { customer, logout } = useCustomerAuth();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'layanan' | 'panduan' | null>(
     null
   );
+
+  const firstName = customer?.fullName.split(/\s+/)[0] || '';
+
+  const handleMemberLogout = async () => {
+    await logout();
+    setMobileOpen(false);
+    router.refresh();
+  };
 
   const waUrl = buildWhatsAppUrl(
     settings.whatsapp_admin,
@@ -287,16 +302,56 @@ export default function Navbar({
           </Link>
         </nav>
 
-        <div className="hidden md:flex items-center gap-2.5 shrink-0">
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          {customer ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="min-h-[40px] inline-flex items-center gap-1.5 rounded-full bg-navy hover:bg-navy-light text-white font-bold px-3.5 text-xs shadow-sm transition-colors whitespace-nowrap"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+                <span>
+                  {dict.nav.dashboard}
+                  {firstName ? ` · ${firstName}` : ''}
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleMemberLogout}
+                title={dict.nav.logout}
+                aria-label={dict.nav.logout}
+                className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-full border border-[#DCE6F5] text-slate-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="min-h-[40px] inline-flex items-center gap-1.5 rounded-full border border-[#D4E2F6] bg-white hover:bg-ice text-ink font-bold px-3.5 text-xs transition-colors whitespace-nowrap"
+              >
+                <LogIn className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
+                {dict.nav.login}
+              </Link>
+              <Link
+                href="/register"
+                className="min-h-[40px] inline-flex items-center gap-1.5 rounded-full bg-gold hover:bg-gold-dark text-ink font-extrabold px-3.5 text-xs shadow-sm transition-colors whitespace-nowrap"
+              >
+                <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                {dict.nav.register}
+              </Link>
+            </>
+          )}
           <a
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-h-[44px] inline-flex items-center gap-2 rounded-full bg-wa hover:bg-wa-dark text-white font-bold px-5 text-sm shadow-sm transition-colors whitespace-nowrap"
+            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-full bg-wa hover:bg-wa-dark text-white font-bold px-4 text-xs shadow-sm transition-colors whitespace-nowrap"
           >
-            <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            {dict.nav.chatWhatsapp}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden xl:inline">{dict.nav.chatWhatsapp}</span>
+            <span className="xl:hidden">WA</span>
           </a>
         </div>
 
@@ -406,6 +461,64 @@ export default function Navbar({
             {dict.nav.faqMobile}
           </Link>
           <div className="pt-2 flex flex-col gap-2 border-t border-[#E2EAF6]">
+            {customer ? (
+              <div className="rounded-xl bg-ice border border-[#DCE6F5] p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-extrabold text-ink">
+                      {customer.fullName}
+                    </div>
+                    <div className="text-[11px] font-mono text-brand font-semibold">
+                      {customer.memberCode}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleMemberLogout}
+                    className="min-h-[36px] inline-flex items-center gap-1 px-2.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold"
+                  >
+                    <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                    {dict.nav.logout}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="min-h-[42px] inline-flex items-center justify-center gap-1.5 rounded-lg bg-navy text-white text-xs font-bold"
+                  >
+                    <LayoutDashboard className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+                    {dict.nav.dashboard}
+                  </Link>
+                  <Link
+                    href="/dashboard/orders/new"
+                    onClick={() => setMobileOpen(false)}
+                    className="min-h-[42px] inline-flex items-center justify-center rounded-lg bg-gold text-ink text-xs font-extrabold"
+                  >
+                    {dict.nav.newOrder}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#DCE6F5] bg-ice text-ink text-sm font-bold"
+                >
+                  <LogIn className="h-4 w-4 text-brand" aria-hidden="true" />
+                  {dict.nav.login}
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-gold hover:bg-gold-dark text-ink text-sm font-extrabold"
+                >
+                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  {dict.nav.register}
+                </Link>
+              </div>
+            )}
             <a
               href={waUrl}
               target="_blank"

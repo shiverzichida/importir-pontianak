@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { CustomerAuthProvider } from '@/components/public/CustomerAuthProvider';
 import { LanguageProvider } from '@/components/public/LanguageProvider';
+import { getCustomerSession } from '@/lib/auth';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LOCALE_COOKIE_NAME, normalizeLocale } from '@/lib/i18n/types';
 import './globals.css';
@@ -39,7 +41,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
+  const [cookieStore, initialCustomer] = await Promise.all([
+    cookies(),
+    getCustomerSession(),
+  ]);
   const initialLocale = normalizeLocale(
     cookieStore.get(LOCALE_COOKIE_NAME)?.value
   );
@@ -51,7 +56,9 @@ export default async function RootLayout({
     >
       <body className="font-sans antialiased bg-paper text-slate-900">
         <LanguageProvider initialLocale={initialLocale}>
-          {children}
+          <CustomerAuthProvider initialCustomer={initialCustomer}>
+            {children}
+          </CustomerAuthProvider>
         </LanguageProvider>
       </body>
     </html>

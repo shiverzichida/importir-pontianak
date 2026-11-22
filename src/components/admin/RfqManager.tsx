@@ -297,8 +297,13 @@ export default function RfqManager() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="font-bold text-navy">
-                        {order.customer_name}
+                      <div className="font-bold text-navy flex items-center gap-1.5">
+                        <span>{order.customer_name}</span>
+                        {order.customer_id && (
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold">
+                            Member
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-slate-600 font-mono">
                         +{order.customer_whatsapp}
@@ -308,8 +313,13 @@ export default function RfqManager() {
                       <div className="font-semibold text-slate-900 truncate">
                         {order.product_name}
                       </div>
-                      <div className="text-xs text-slate-600">
-                        {SERVICE_LABELS[order.service_type]}
+                      <div className="text-xs text-slate-600 flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span>{SERVICE_LABELS[order.service_type]}</span>
+                        {order.lcl_batch_code && (
+                          <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-900 font-mono text-[10px] font-bold">
+                            Kloter: {order.lcl_batch_code}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
@@ -425,6 +435,11 @@ export default function RfqManager() {
                   <div className="text-xs text-slate-600">Layanan & Rute</div>
                   <div className="font-bold text-navy">
                     {SERVICE_LABELS[selectedOrder.service_type]}
+                    {selectedOrder.lcl_batch_code && (
+                      <span className="ml-2 px-2 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-900 font-mono text-[11px] font-bold">
+                        Kloter: {selectedOrder.lcl_batch_code}
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-slate-700">
                     {ORIGIN_LABELS[selectedOrder.origin_country]} ·{' '}

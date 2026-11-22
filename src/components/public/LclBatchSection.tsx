@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { buildWhatsAppUrl, formatDateOnly, formatNumberId } from '@/lib/format';
 import type { LclBatch, LclBatchStatus, PublicSettings } from '@/lib/types';
+import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
 
 interface LclBatchSectionProps {
@@ -44,6 +45,7 @@ export default function LclBatchSection({
   onSelectBatch,
 }: LclBatchSectionProps) {
   const { locale, dict } = useLanguage();
+  const { customer } = useCustomerAuth();
 
   if (batches.length === 0) return null;
 
@@ -226,7 +228,11 @@ export default function LclBatchSection({
                     </button>
                   ) : (
                     <Link
-                      href={`/?batch=${encodeURIComponent(batch.batch_code)}#rfq`}
+                      href={
+                        customer
+                          ? `/dashboard/orders/new?batch=${encodeURIComponent(batch.batch_code)}`
+                          : `/?batch=${encodeURIComponent(batch.batch_code)}#rfq`
+                      }
                       className="min-h-[42px] inline-flex items-center justify-center gap-1 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold px-3 text-xs transition-colors"
                     >
                       {dict.lclBatches.bookSlotBtn}

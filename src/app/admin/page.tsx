@@ -6,6 +6,7 @@ import {
   FileSpreadsheet,
   Package,
   Truck,
+  Users,
 } from 'lucide-react';
 import AdminShell from '@/components/admin/AdminShell';
 import { getAdminSession } from '@/lib/auth';
@@ -34,6 +35,7 @@ export default async function AdminOverviewPage() {
     pendingRfqRes,
     activeShipmentsRes,
     arrivedShipmentsRes,
+    totalCustomersRes,
     latestRfqsRes,
     latestShipmentsRes,
   ] = await Promise.all([
@@ -52,6 +54,9 @@ export default async function AdminOverviewPage() {
       .from('imp_shipments')
       .select('id', { count: 'exact', head: true })
       .in('current_status', ['arrived_pontianak', 'out_for_delivery', 'delivered']),
+    supabase
+      .from('imp_customers')
+      .select('id', { count: 'exact', head: true }),
     supabase
       .from('imp_rfq_orders')
       .select('*')
@@ -92,6 +97,12 @@ export default async function AdminOverviewPage() {
       icon: CheckCircle2,
       color: 'text-emerald-800 bg-emerald-50 border-emerald-200',
     },
+    {
+      label: 'Member Terdaftar',
+      value: totalCustomersRes.count ?? 0,
+      icon: Users,
+      color: 'text-teal-800 bg-teal-50 border-teal-200',
+    },
   ];
 
   return (
@@ -127,6 +138,12 @@ export default async function AdminOverviewPage() {
               Kelola Kloter LCL
             </Link>
             <Link
+              href="/admin/customers"
+              className="min-h-[44px] inline-flex items-center rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-navy font-bold px-4 text-xs transition-colors"
+            >
+              Kelola Member
+            </Link>
+            <Link
               href="/admin/shipments"
               className="min-h-[44px] inline-flex items-center rounded-lg bg-teal hover:bg-teal-dark text-white font-bold px-4 text-xs transition-colors"
             >
@@ -135,7 +152,7 @@ export default async function AdminOverviewPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {kpis.map((kpi) => {
             const Icon = kpi.icon;
             return (

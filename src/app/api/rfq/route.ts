@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getActiveCustomerProfile } from '@/lib/customer-data';
 import {
   buildWhatsAppUrl,
   formatIdr,
@@ -49,12 +50,27 @@ export async function POST(req: NextRequest) {
     }
     const dict = getDictionary(locale);
 
+    const customer = await getActiveCustomerProfile();
+    if (!customer) {
+      return NextResponse.json(
+        { error: dict.api.authRequiredForOrder, code: 'AUTH_REQUIRED' },
+        { status: 401 }
+      );
+    }
+
     const serviceType = String(body.service_type || '') as ServiceType;
-    const customerName = String(body.customer_name || '').trim();
-    const customerWhatsappRaw = String(body.customer_whatsapp || '').trim();
+    const customerName =
+      String(body.customer_name || '').trim() || customer.full_name;
+    const customerWhatsappRaw =
+      String(body.customer_whatsapp || '').trim() || customer.whatsapp;
     const customerWhatsapp = normalizeWaPhone(customerWhatsappRaw);
-    const companyName = String(body.company_name || '').trim() || null;
-    const destinationCity = String(body.destination_city || '').trim();
+    const companyName =
+      body.company_name !== undefined
+        ? String(body.company_name || '').trim() || null
+        : customer.company_name;
+    const destinationCity =
+      String(body.destination_city || '').trim() ||
+      customer.default_destination_city;
     const originCountry = String(body.origin_country || '') as OriginCountry;
     const shippingMethod = String(
       body.shipping_method ||
@@ -68,6 +84,7 @@ export async function POST(req: NextRequest) {
     const productPhotoUrl = String(body.product_photo_url || '').trim() || null;
     const currency = String(body.currency || 'RMB') as CurrencyCode;
     const customerNotes = String(body.customer_notes || '').trim() || null;
+    const lclBatchCode = String(body.lcl_batch_code || '').trim() || null;
 
     if (!VALID_SERVICES.includes(serviceType)) {
       return NextResponse.json(
@@ -145,6 +162,8 @@ export async function POST(req: NextRequest) {
       .from('imp_rfq_orders')
       .insert({
         rfq_code: rfqCode,
+        customer_id: customer.id,
+        lcl_batch_code: lclBatchCode,
         service_type: serviceType,
         customer_name: customerName,
         customer_whatsapp: customerWhatsapp,
@@ -189,7 +208,7 @@ export async function POST(req: NextRequest) {
     const lines = [
       tpl.greeting(settings.company_name),
       '',
-      `*${tpl.code}:* ${order.rfq_code}`,
+      `*${tpl.code}:* ${order.rfq_code} (Member: ${customer.member_code})`,
       `*${tpl.service}:* ${dict.domain.serviceLabels[order.service_type]}`,
       `*${tpl.name}:* ${order.customer_name}${order.company_name ? ` (${order.company_name})` : ''}`,
       `*${tpl.originRoute}:* ${dict.domain.originLabels[order.origin_country]}, ${dict.domain.methodLabels[order.shipping_method]}`,
@@ -197,6 +216,9 @@ export async function POST(req: NextRequest) {
       `*${tpl.product}:* ${order.product_name} (Qty: ${order.quantity ?? 1})`,
     ];
 
+    if (order.lcl_batch_code) {
+      lines.push(`*LCL Batch:* ${order.lcl_batch_code}`);
+    }
     if (order.product_url) {
       lines.push(`*${tpl.productUrl}:* ${order.product_url}`);
     }

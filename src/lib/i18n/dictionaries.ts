@@ -55,6 +55,12 @@ export interface Dictionary {
     rfqMobile: string;
     faqMobile: string;
     adminDashboard: string;
+    login: string;
+    register: string;
+    dashboard: string;
+    newOrder: string;
+    logout: string;
+    memberAccount: string;
     openMenuAria: string;
     closeMenuAria: string;
     waGreeting: (companyName: string) => string;
@@ -489,6 +495,7 @@ export interface Dictionary {
     rfqMissingProduct: string;
     rfqSaveError: string;
     rfqServerError: string;
+    authRequiredForOrder: string;
     rfqWaTemplate: {
       greeting: (companyName: string) => string;
       code: string;
@@ -554,6 +561,12 @@ const ID_DICTIONARY: Dictionary = {
     rfqMobile: 'Ajukan Order / Form RFQ',
     faqMobile: 'FAQ Impor',
     adminDashboard: 'Dashboard Admin',
+    login: 'Masuk',
+    register: 'Daftar',
+    dashboard: 'Dashboard',
+    newOrder: 'Buat Order',
+    logout: 'Keluar',
+    memberAccount: 'Akun Member',
     openMenuAria: 'Buka menu navigasi',
     closeMenuAria: 'Tutup menu navigasi',
     waGreeting: (companyName) =>
@@ -1184,6 +1197,8 @@ const ID_DICTIONARY: Dictionary = {
     rfqMissingProduct: 'Nama barang / deskripsi order wajib diisi.',
     rfqSaveError: 'Gagal menyimpan pengajuan RFQ. Silakan coba lagi.',
     rfqServerError: 'Terjadi kesalahan saat memproses pengajuan RFQ.',
+    authRequiredForOrder:
+      'Silakan daftar atau masuk ke akun Member terlebih dahulu untuk mengajukan order.',
     rfqWaTemplate: {
       greeting: (companyName) =>
         `Halo Admin ${companyName}, saya mengajukan permintaan penawaran (RFQ):`,
@@ -1251,6 +1266,12 @@ const EN_DICTIONARY: Dictionary = {
     rfqMobile: 'Submit Order / RFQ Form',
     faqMobile: 'Import FAQ',
     adminDashboard: 'Admin Dashboard',
+    login: 'Sign In',
+    register: 'Register',
+    dashboard: 'Dashboard',
+    newOrder: 'New Order',
+    logout: 'Sign Out',
+    memberAccount: 'Member Account',
     openMenuAria: 'Open navigation menu',
     closeMenuAria: 'Close navigation menu',
     waGreeting: (companyName) =>
@@ -1884,6 +1905,8 @@ const EN_DICTIONARY: Dictionary = {
     rfqMissingProduct: 'Item name / order description is required.',
     rfqSaveError: 'Failed to save RFQ submission. Please try again.',
     rfqServerError: 'An error occurred while processing your RFQ request.',
+    authRequiredForOrder:
+      'Please sign in or register a Member account first before submitting an order.',
     rfqWaTemplate: {
       greeting: (companyName) =>
         `Hello ${companyName} Admin, I am submitting a Request For Quotation (RFQ):`,
@@ -1950,6 +1973,12 @@ const ZH_DICTIONARY: Dictionary = {
     rfqMobile: '提交需求 / RFQ 询价表',
     faqMobile: '进口常见问题 FAQ',
     adminDashboard: '管理员后台',
+    login: '登录',
+    register: '注册',
+    dashboard: '会员中心',
+    newOrder: '新建订单',
+    logout: '退出登录',
+    memberAccount: '会员账户',
     openMenuAria: '打开导航菜单',
     closeMenuAria: '关闭导航菜单',
     waGreeting: (companyName) =>
@@ -2570,6 +2599,7 @@ const ZH_DICTIONARY: Dictionary = {
     rfqMissingProduct: '请填写商品名称或订单说明。',
     rfqSaveError: '保存 RFQ 询价单失败，请重试。',
     rfqServerError: '处理 RFQ 请求时发生系统错误。',
+    authRequiredForOrder: '请先注册或登录会员账户后再提交正式订单或询价单。',
     rfqWaTemplate: {
       greeting: (companyName) =>
         `您好 ${companyName} 客服，我提交了一份进口询价申请 (RFQ)：`,

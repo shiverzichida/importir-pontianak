@@ -24,6 +24,7 @@ import type {
   PublicConfig,
   ShipmentScale,
 } from '@/lib/types';
+import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
 import LclBatchSection from './LclBatchSection';
 import Navbar from './Navbar';
@@ -65,6 +66,7 @@ export default function CatalogClient({
   batches = [],
 }: CatalogClientProps) {
   const { dict } = useLanguage();
+  const { customer } = useCustomerAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<
     CatalogCategory | 'all'
@@ -601,7 +603,11 @@ export default function CatalogClient({
                         {/* Card Footer Actions */}
                         <div className="pt-3 border-t border-[#E6EEF9] grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Link
-                            href={`/?catalog=${encodeURIComponent(product.slug)}#rfq`}
+                            href={
+                              customer
+                                ? `/dashboard/orders/new?catalog=${encodeURIComponent(product.slug)}`
+                                : `/?catalog=${encodeURIComponent(product.slug)}#rfq`
+                            }
                             className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand hover:bg-brand-dark text-white font-bold px-3.5 text-xs transition-colors"
                           >
                             {dict.catalog.joinLclBtn}
@@ -646,7 +652,7 @@ export default function CatalogClient({
               </div>
               <div className="flex flex-col sm:flex-row gap-3 shrink-0">
                 <Link
-                  href="/#rfq"
+                  href={customer ? '/dashboard/orders/new' : '/#rfq'}
                   className="min-h-[46px] inline-flex items-center justify-center gap-2 rounded-full bg-gold hover:bg-gold-dark text-ink font-extrabold px-5 text-xs sm:text-sm transition-colors"
                 >
                   {dict.catalog.customRfqBtn}

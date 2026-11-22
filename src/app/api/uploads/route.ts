@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSession } from '@/lib/auth';
+import { getActiveCustomerProfile } from '@/lib/customer-data';
 
 const MAX_FILE_BYTES = 3 * 1024 * 1024; // 3 MB
 
@@ -44,6 +46,18 @@ function detectImageExtension(buf: Buffer): 'jpg' | 'png' | 'webp' | null {
 
 export async function POST(req: NextRequest) {
   try {
+    const [adminSession, customerProfile] = await Promise.all([
+      getAdminSession(),
+      getActiveCustomerProfile(),
+    ]);
+
+    if (!adminSession && !customerProfile) {
+      return NextResponse.json(
+        { error: 'Silakan login terlebih dahulu untuk mengunggah file.' },
+        { status: 401 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get('file');
 

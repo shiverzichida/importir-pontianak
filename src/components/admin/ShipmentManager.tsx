@@ -24,6 +24,7 @@ import {
 } from '@/lib/format';
 import type {
   CargoCategory,
+  CustomerProfile,
   OriginCountry,
   PaymentStatus,
   Shipment,
@@ -31,6 +32,14 @@ import type {
   ShippingMethod,
   TrackingEvent,
 } from '@/lib/types';
+
+function formatMemberMarking(
+  origin: OriginCountry,
+  markingBase: string
+): string {
+  const prefix = origin === 'china' ? 'CN' : origin === 'malaysia' ? 'MY' : 'SG';
+  return `PNK-${prefix}-${markingBase.toUpperCase()}`;
+}
 
 interface ShipmentWithEvents extends Shipment {
   events: TrackingEvent[];
@@ -43,8 +52,11 @@ export default function ShipmentManager() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
+    customer_id: '',
+    marking_code: '',
     customer_name: '',
     customer_whatsapp: '',
     origin_country: 'china' as OriginCountry,
@@ -122,6 +134,19 @@ export default function ShipmentManager() {
   }, [statusFilter, search]);
 
   useEffect(() => {
+    fetch('/api/admin/customers?status=active', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { customers?: CustomerProfile[] } | null) => {
+        if (data?.customers) {
+          setCustomers(data.customers);
+        }
+      })
+      .catch(() => {
+        // Ignore optional customer list fetch failure
+      });
+  }, []);
+
+  useEffect(() => {
     if (!showCreate && !editingShipment && !trackingTarget) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -150,6 +175,8 @@ export default function ShipmentManager() {
       } else {
         setShowCreate(false);
         setCreateForm({
+          customer_id: '',
+          marking_code: '',
           customer_name: '',
           customer_whatsapp: '',
           origin_country: 'china',
@@ -407,6 +434,13 @@ export default function ShipmentManager() {
                       >
                         {payMeta.label}
                       </span>
+                      {s.payment_proof_url && (
+                        <div className="mt-1">
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-bold border bg-emerald-50 text-emerald-800 border-emerald-200">
+                            Ada Bukti Bayar
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span
@@ -479,6 +513,58 @@ export default function ShipmentManager() {
             </div>
 
             <form onSubmit={handleCreate} className="p-6 space-y-4 text-sm">
+              {customers.length > 0 && (
+                <div>
+                  <label
+                    htmlFor="create-select-member"
+                    className="block text-xs font-bold text-navy mb-1"
+                  >
+                    Pilih Member Terdaftar (Opsional)
+                  </label>
+                  <select
+                    id="create-select-member"
+                    value={createForm.customer_id}
+                    onChange={(e) => {
+                      const cid = e.target.value;
+                      const member = customers.find((c) => c.id === cid);
+                      if (!member) {
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          customer_id: '',
+                          marking_code: '',
+                        }));
+                        return;
+                      }
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        customer_id: member.id,
+                        customer_name: member.company_name
+                          ? `${member.company_name} (${member.full_name})`
+                          : member.full_name,
+                        customer_whatsapp: member.whatsapp,
+                        destination_city: member.default_destination_city,
+                        marking_code: formatMemberMarking(
+                          prev.origin_country,
+                          member.marking_code_base
+                        ),
+                      }));
+                    }}
+                    className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="">
+                      -- Input Manual / Tanpa Tautan Member --
+                    </option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.member_code} · {c.full_name}
+                        {c.company_name ? ` (${c.company_name})` : ''} ·{' '}
+                        {c.marking_code_base}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
@@ -556,12 +642,22 @@ export default function ShipmentManager() {
                   <select
                     id="create-origin"
                     value={createForm.origin_country}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const nextOrigin = e.target.value as OriginCountry;
+                      const member = customers.find(
+                        (c) => c.id === createForm.customer_id
+                      );
                       setCreateForm({
                         ...createForm,
-                        origin_country: e.target.value as OriginCountry,
-                      })
-                    }
+                        origin_country: nextOrigin,
+                        marking_code: member
+                          ? formatMemberMarking(
+                              nextOrigin,
+                              member.marking_code_base
+                            )
+                          : createForm.marking_code,
+                      });
+                    }}
                     className="w-full min-h-[44px] rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
                   >
                     <option value="china">China</option>
@@ -953,6 +1049,54 @@ export default function ShipmentManager() {
                   />
                 </div>
               </div>
+
+              {editingShipment.payment_proof_url && (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3.5 space-y-2">
+                  <div className="text-xs font-bold text-emerald-900">
+                    Bukti Pembayaran dari Member
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <a
+                      href={editingShipment.payment_proof_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0"
+                    >
+                      <img
+                        src={editingShipment.payment_proof_url}
+                        alt={`Bukti bayar ${editingShipment.tracking_number}`}
+                        width={80}
+                        height={80}
+                        className="h-20 w-20 rounded-lg object-cover border border-emerald-300"
+                      />
+                    </a>
+                    <div className="min-w-0 text-xs space-y-1">
+                      <a
+                        href={editingShipment.payment_proof_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-bold text-teal-dark hover:underline"
+                      >
+                        Buka Gambar Penuh
+                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      </a>
+                      {editingShipment.payment_proof_note && (
+                        <p className="text-emerald-950">
+                          {editingShipment.payment_proof_note}
+                        </p>
+                      )}
+                      {editingShipment.payment_proof_uploaded_at && (
+                        <div className="text-[11px] text-emerald-700">
+                          Diunggah:{' '}
+                          {formatDateWib(
+                            editingShipment.payment_proof_uploaded_at
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button

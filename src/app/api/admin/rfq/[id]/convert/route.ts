@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
-import { generateMarkingCode, generateTrackingNumber } from '@/lib/server-codes';
+import {
+  formatCustomerMarkingCode,
+  generateMarkingCode,
+  generateTrackingNumber,
+} from '@/lib/server-codes';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import type { RfqOrder, ShippingMethod } from '@/lib/types';
 
@@ -64,10 +68,24 @@ export async function POST(
           : (rfq.shipping_method as ShippingMethod);
 
     const trackingNumber = generateTrackingNumber();
-    const markingCode = generateMarkingCode(
+    let markingCode = generateMarkingCode(
       rfq.origin_country,
       rfq.company_name || rfq.customer_name
     );
+
+    if (rfq.customer_id) {
+      const { data: customerRow } = await supabase
+        .from('imp_customers')
+        .select('marking_code_base')
+        .eq('id', rfq.customer_id)
+        .maybeSingle();
+      if (customerRow?.marking_code_base) {
+        markingCode = formatCustomerMarkingCode(
+          rfq.origin_country,
+          String(customerRow.marking_code_base)
+        );
+      }
+    }
 
     const { data: shipment, error: shipErr } = await supabase
       .from('imp_shipments')
@@ -78,6 +96,7 @@ export async function POST(
           ? String(body.supplier_tracking_no).trim()
           : null,
         rfq_id: rfq.id,
+        customer_id: rfq.customer_id ?? null,
         customer_name: rfq.company_name
           ? `${rfq.company_name} (${rfq.customer_name})`
           : rfq.customer_name,

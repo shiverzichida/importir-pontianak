@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { buildWhatsAppUrl, formatIdr, formatNumberId } from '@/lib/format';
 import type { CatalogProduct, LclBatch, PublicConfig } from '@/lib/types';
+import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
 import LclBatchSection from './LclBatchSection';
 import Navbar from './Navbar';
@@ -44,6 +45,7 @@ export default function CatalogDetailClient({
   batches,
 }: CatalogDetailClientProps) {
   const { dict } = useLanguage();
+  const { customer } = useCustomerAuth();
   const [copiedKw, setCopiedKw] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -386,7 +388,11 @@ export default function CatalogDetailClient({
 
                 <div className="pt-4 border-t border-[#E6EEF9] flex flex-col sm:flex-row gap-3">
                   <Link
-                    href={`/?catalog=${encodeURIComponent(product.slug)}#rfq`}
+                    href={
+                      customer
+                        ? `/dashboard/orders/new?catalog=${encodeURIComponent(product.slug)}`
+                        : `/?catalog=${encodeURIComponent(product.slug)}#rfq`
+                    }
                     className="flex-1 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-gold hover:bg-gold-dark text-ink font-extrabold px-6 text-sm shadow-sm transition-colors"
                   >
                     {dict.catalog.joinLclBtn}

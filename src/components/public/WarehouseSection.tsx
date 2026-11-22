@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, Copy, MapPin, Phone, Tag } from 'lucide-react';
 import type { OriginCountry, WarehouseInfo } from '@/lib/types';
+import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
 
 interface WarehouseSectionProps {
@@ -11,9 +12,20 @@ interface WarehouseSectionProps {
 
 export default function WarehouseSection({ warehouses }: WarehouseSectionProps) {
   const { locale, dict } = useLanguage();
+  const { customer } = useCustomerAuth();
   const [selectedOrigin, setSelectedOrigin] = useState<OriginCountry>('china');
-  const [shopName, setShopName] = useState<string>('BORNEO88');
+  const [shopName, setShopName] = useState<string>(
+    () => customer?.markingCodeBase || 'BORNEO88'
+  );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (customer?.markingCodeBase) {
+      setShopName((prev) =>
+        prev === 'BORNEO88' ? customer.markingCodeBase : prev
+      );
+    }
+  }, [customer]);
 
   const activeWarehouse = useMemo(() => {
     return (

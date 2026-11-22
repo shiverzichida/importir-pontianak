@@ -120,6 +120,8 @@ export interface RfqOrder {
   customer_notes: string | null;
   admin_notes: string | null;
   status: RfqStatus;
+  customer_id?: string | null;
+  lcl_batch_code?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -130,6 +132,7 @@ export interface Shipment {
   marking_code: string;
   supplier_tracking_no: string | null;
   rfq_id: string | null;
+  customer_id?: string | null;
   customer_name: string;
   customer_whatsapp: string;
   origin_country: OriginCountry;
@@ -142,6 +145,9 @@ export interface Shipment {
   colli_count: number;
   invoice_amount_idr: number | null;
   payment_status: PaymentStatus;
+  payment_proof_url?: string | null;
+  payment_proof_note?: string | null;
+  payment_proof_uploaded_at?: string | null;
   current_status: ShipmentStatus;
   estimated_arrival: string | null;
   created_at: string;
@@ -203,6 +209,7 @@ export interface CalculatorPrefill {
   product_name?: string;
   product_url?: string;
   service_type?: ServiceType;
+  lcl_batch_code?: string;
 }
 
 export type CatalogCategory =
@@ -283,4 +290,31 @@ export interface AdminSessionUser {
   email: string;
   name: string;
   role: string;
+}
+
+export interface CustomerProfile {
+  id: string;
+  member_code: string;
+  marking_code_base: string;
+  email: string;
+  full_name: string;
+  whatsapp: string;
+  company_name: string | null;
+  default_destination_city: string;
+  address_detail: string | null;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerSessionUser {
+  customerId: string;
+  memberCode: string;
+  markingCodeBase: string;
+  email: string;
+  fullName: string;
+  whatsapp: string;
+  companyName: string | null;
+  defaultDestinationCity: string;
 }

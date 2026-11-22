@@ -14,6 +14,7 @@ import {
   Settings,
   Ship,
   ShoppingBag,
+  Users,
   X,
 } from 'lucide-react';
 import type { AdminSessionUser } from '@/lib/types';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin/rfq', label: 'RFQ & Order', icon: FileSpreadsheet },
   { href: '/admin/shipments', label: 'Pengiriman & Tracking', icon: Package },
+  { href: '/admin/customers', label: 'Member / Customer', icon: Users },
   { href: '/admin/kloter', label: 'Kloter LCL', icon: Container },
   { href: '/admin/katalog', label: 'Katalog Produk', icon: ShoppingBag },
   { href: '/admin/settings', label: 'Tarif & Pengaturan', icon: Settings },

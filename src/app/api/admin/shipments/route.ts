@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
     };
 
     const supabase = getSupabaseAdmin();
+    const customerId = body.customer_id ? String(body.customer_id).trim() : null;
     const { data: shipment, error } = await supabase
       .from('imp_shipments')
       .insert({
@@ -130,6 +131,7 @@ export async function POST(req: NextRequest) {
         supplier_tracking_no: body.supplier_tracking_no
           ? String(body.supplier_tracking_no).trim()
           : null,
+        customer_id: customerId,
         customer_name: customerName,
         customer_whatsapp: customerWhatsapp,
         origin_country: originCountry,
