@@ -583,7 +583,7 @@ const ID_DICTIONARY: Dictionary = {
       'Tim Profesional & Responsif',
     ],
     ctaPrimary: 'Hitung Estimasi Biaya',
-    ctaSecondary: 'Pelajari Layanan',
+    ctaSecondary: 'Tonton Video Cara Kerja',
   },
   services: {
     eyebrow: 'Layanan Kami',
@@ -609,24 +609,24 @@ const ID_DICTIONARY: Dictionary = {
     },
   },
   workflow: {
-    eyebrow: 'Alur Kerja Kami',
-    heading: 'Mudah, Transparan, Terpercaya',
+    eyebrow: 'Video & Alur Kerja 4 Langkah',
+    heading: 'Cara Kerja Sistem Importir Pontianak',
     steps: [
       {
-        title: '1. Kirim Link / Permintaan Order',
-        desc: 'Paste link produk atau unggah foto barang melalui form RFQ',
+        title: '1. Daftar & Dapat Marking Code',
+        desc: 'Daftar gratis 30 detik, langsung dapat Member ID & kode gudang CN/MY/SG permanen',
       },
       {
-        title: '2. Dapatkan Penawaran',
-        desc: 'Harga all-in transparan: barang, ongkir & pengurusan bea cukai',
+        title: '2. Order Katalog / Titip Beli',
+        desc: 'Pilih produk cuan atau paste link 1688, lalu setujui penawaran all-in di dashboard',
       },
       {
-        title: '3. Proses & Pengiriman',
-        desc: 'QC gudang asal, packing aman dan pengiriman menuju Pontianak',
+        title: '3. Gabung Kloter Kontainer LCL',
+        desc: 'Mulai 0,1 CBM digabung 1 kontainer bersama importir Kalbar termasuk bea cukai',
       },
       {
-        title: '4. Terima Barang',
-        desc: 'Ambil di gudang Pontianak atau teruskan ke alamat Kalbar',
+        title: '4. Lacak Resi & Terima di Kalbar',
+        desc: 'Pantau tracking real-time, unggah bukti bayar, & terima hingga Pontianak / seluruh Kalbar',
       },
     ],
   },
@@ -1289,7 +1289,7 @@ const EN_DICTIONARY: Dictionary = {
       'Responsive Dedicated Team',
     ],
     ctaPrimary: 'Calculate Import Cost',
-    ctaSecondary: 'Explore Services',
+    ctaSecondary: 'Watch How It Works',
   },
   services: {
     eyebrow: 'Our Services',
@@ -1315,24 +1315,24 @@ const EN_DICTIONARY: Dictionary = {
     },
   },
   workflow: {
-    eyebrow: 'How It Works',
-    heading: 'Simple, Transparent, Reliable',
+    eyebrow: 'Explainer Video & 4-Step Flow',
+    heading: 'How Importir Pontianak Works',
     steps: [
       {
-        title: '1. Submit Product Link / Request',
-        desc: 'Paste a supplier URL or upload item photos through the RFQ form',
+        title: '1. Sign Up & Get Marking Code',
+        desc: 'Register free in 30s to receive your permanent CN/MY/SG transit warehouse codes',
       },
       {
-        title: '2. Receive All-In Quotation',
-        desc: 'Clear Rupiah breakdown covering goods, freight, and customs clearance',
+        title: '2. Pick Catalog / Submit RFQ',
+        desc: 'Choose 1688 catalog items or paste supplier links, then approve your all-in quote',
       },
       {
-        title: '3. QC & International Shipping',
-        desc: 'Origin warehouse inspection, safe packing, and dispatch to Pontianak',
+        title: '3. Consolidate in Shared LCL',
+        desc: 'Start from 0.1 CBM consolidated with West Kalimantan importers, customs included',
       },
       {
-        title: '4. Receive Your Cargo',
-        desc: 'Pick up at our Pontianak hub or forward to any West Kalimantan city',
+        title: '4. Live Tracking Across Kalbar',
+        desc: 'Monitor milestones, upload transfer proof, and receive in Pontianak or Kalbar cities',
       },
     ],
   },
@@ -1995,7 +1995,7 @@ const ZH_DICTIONARY: Dictionary = {
       '专业中文与印尼语团队对接',
     ],
     ctaPrimary: '立即试算进口费用',
-    ctaSecondary: '了解全部服务',
+    ctaSecondary: '观看运作流程视频',
   },
   services: {
     eyebrow: '核心服务',
@@ -2021,24 +2021,24 @@ const ZH_DICTIONARY: Dictionary = {
     },
   },
   workflow: {
-    eyebrow: '服务流程',
-    heading: '简单、透明、省心',
+    eyebrow: '演示视频与 4 步合作流程',
+    heading: '坤甸进口通业务运作方式',
     steps: [
       {
-        title: '1. 发送商品链接 / 询价需求',
-        desc: '通过 RFQ 表单提交商品链接或上传商品图片',
+        title: '1. 免费注册获取专属唛头',
+        desc: '30 秒注册会员，即刻拥有广州、古晋与新加坡中转仓永久专属唛头',
       },
       {
-        title: '2. 获取全包报价单',
-        desc: '印尼盾明细报价：含货款、国际运费及清关税费',
+        title: '2. 选品下单或提交代购询价',
+        desc: '挑选 1688 选品目录或粘贴供应商链接，在线确认一口价全包报价',
       },
       {
-        title: '3. 验货打包与发运',
-        desc: '始发仓收货核验、安全加固包装并发往坤甸',
+        title: '3. 拼入 LCL 共享集装箱',
+        desc: '最低 0.1 立方起与西加同行拼柜发运，全程双清包税透明省心',
       },
       {
-        title: '4. 坤甸收货或全境派送',
-        desc: '支持坤甸仓库自提或转运至西加各县市地址',
+        title: '4. 实时追踪并派送西加全境',
+        desc: '随时查看轨迹与上传水单，支持坤甸仓自提或派送至山口洋/新当等全境',
       },
     ],
   },

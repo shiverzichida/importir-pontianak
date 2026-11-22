@@ -1,0 +1,52 @@
+{
+  "totalDurationSec": 61.776,
+  "voice": "id-ID-ArdiNeural",
+  "rate": "+5%",
+  "scenes": [
+    {
+      "id": "scene-01-hook",
+      "label": "Intro & Solusi Impor LCL",
+      "narration": "Mau impor barang dari China, Malaysia, atau Singapura ke Pontianak tanpa harus sewa satu kontainer penuh? Di Importir Pontianak, Anda bisa mulai dari nol koma satu kubik saja.",
+      "audioDurationSec": 10.752,
+      "durationSec": 11.202,
+      "startSec": 0.0,
+      "endSec": 11.202
+    },
+    {
+      "id": "scene-02-daftar-marking",
+      "label": "1. Daftar Member & Marking Code",
+      "narration": "Langkah pertama, daftar akun Member gratis dalam tiga puluh detik. Anda langsung mendapat ID Member dan Marking Code pribadi untuk gudang Guangzhou, Kuching, dan Singapura.",
+      "audioDurationSec": 10.584,
+      "durationSec": 11.034,
+      "startSec": 11.202,
+      "endSec": 22.236
+    },
+    {
+      "id": "scene-03-order-titip-beli",
+      "label": "2. Order Katalog, Titip Beli & Forwarder",
+      "narration": "Langkah kedua, pilih produk cuan di Katalog, kirim link 1688 atau Alibaba untuk jasa titip beli, atau kirim paket ke gudang transit kami. Tim kami hitung penawaran all-in hingga Pontianak.",
+      "audioDurationSec": 12.24,
+      "durationSec": 12.69,
+      "startSec": 22.236,
+      "endSec": 34.926
+    },
+    {
+      "id": "scene-04-konsolidasi-lcl",
+      "label": "3. Konsolidasi Kontainer LCL Bersama",
+      "narration": "Langkah ketiga, barang Anda digabung ke kloter kontainer LCL bersama importir Kalimantan Barat lainnya. Ongkir jauh lebih hemat, transparan per kubik atau per kilogram, lengkap dengan bea cukai.",
+      "audioDurationSec": 11.592,
+      "durationSec": 12.042,
+      "startSec": 34.926,
+      "endSec": 46.968
+    },
+    {
+      "id": "scene-05-tracking-kalbar",
+      "label": "4. Tracking Real-Time Sampai Kalbar",
+      "narration": "Langkah keempat, pantau pergerakan resi secara real-time dari dashboard Member, unggah bukti transfer, dan terima barang langsung di Pontianak, Singkawang, Sintang, hingga seluruh Kalbar. Daftar sekarang di Importir Pontianak!",
+      "audioDurationSec": 13.896,
+      "durationSec": 14.746,
+      "startSec": 46.968,
+      "endSec": 61.714
+    }
+  ]
+}

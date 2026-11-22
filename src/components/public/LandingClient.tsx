@@ -8,15 +8,11 @@ import {
   Banknote,
   Calculator,
   Check,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Container,
   ExternalLink,
-  FileText,
-  Link2,
   MapPin,
-  PackageCheck,
   PlayCircle,
   Ship,
   ShoppingCart,
@@ -39,6 +35,7 @@ import type {
 import CalculatorSection, {
   type CalculatorScenarioPreset,
 } from './CalculatorSection';
+import ExplainerSection from './ExplainerSection';
 import FaqSection from './FaqSection';
 import { useLanguage } from './LanguageProvider';
 import LclBatchSection from './LclBatchSection';
@@ -118,8 +115,6 @@ const SCENARIO_SPECS: Array<{
   },
 ];
 
-const WORKFLOW_ICONS = [Link2, FileText, PackageCheck, CheckCircle2] as const;
-
 export default function LandingClient({
   config,
   featuredProducts = [],
@@ -150,6 +145,7 @@ export default function LandingClient({
   } | null>(null);
   const [scenarioPreset, setScenarioPreset] =
     useState<CalculatorScenarioPreset | null>(null);
+  const [explainerPlayNonce, setExplainerPlayNonce] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
@@ -278,8 +274,13 @@ export default function LandingClient({
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </a>
 
-                <a
-                  href="#layanan"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExplainerPlayNonce((n) => n + 1);
+                    const el = document.getElementById('alur-kerja');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
                   className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full bg-white hover:bg-ice border border-[#BFD2EE] text-ink font-bold px-6 text-sm shadow-sm transition-colors"
                 >
                   <PlayCircle
@@ -287,7 +288,7 @@ export default function LandingClient({
                     aria-hidden="true"
                   />
                   {dict.hero.ctaSecondary}
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -397,58 +398,8 @@ export default function LandingClient({
           </div>
         </section>
 
-        {/* 4-STEP ALUR KERJA KAMI */}
-        <section
-          id="alur-kerja"
-          className="py-12 lg:py-16 bg-ice border-b border-[#E2EAF6]"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-3 space-y-1.5">
-                <div className="inline-flex items-center gap-2 text-xs font-bold text-brand">
-                  <span
-                    className="w-6 h-0.5 bg-brand rounded-full"
-                    aria-hidden="true"
-                  />
-                  {dict.workflow.eyebrow}
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-ink leading-tight">
-                  {dict.workflow.heading}
-                </h2>
-              </div>
-
-              <div className="lg:col-span-9 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {dict.workflow.steps.map((step, idx) => {
-                  const Icon = WORKFLOW_ICONS[idx] || Link2;
-                  return (
-                    <div
-                      key={step.title}
-                      className="relative text-center flex flex-col items-center space-y-3"
-                    >
-                      <div className="relative flex items-center justify-center w-full">
-                        <div className="h-14 w-14 rounded-full bg-brand text-white flex items-center justify-center shadow-sm">
-                          <Icon className="h-6 w-6" aria-hidden="true" />
-                        </div>
-                        {idx < 3 && (
-                          <ArrowRight
-                            className="hidden lg:block h-4 w-4 text-[#93B4E8] absolute -right-4"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </div>
-                      <h3 className="font-bold text-ink text-sm">
-                        {step.title}
-                      </h3>
-                      <p className="text-xs text-slate-600 leading-relaxed max-w-[200px]">
-                        {step.desc}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* INTERACTIVE EXPLAINER VIDEO & 4-STEP ALUR KERJA */}
+        <ExplainerSection playTriggerNonce={explainerPlayNonce} />
 
         {/* SPLIT ROW: CEK RESI DARK CARD (LEFT 7) + ROUTE SIMULATION CAROUSEL (RIGHT 5) */}
         <section className="py-12 lg:py-16 bg-white border-b border-[#E2EAF6]">
