@@ -11,7 +11,6 @@ import {
   LogOut,
   Menu,
   MessageCircle,
-  ShieldCheck,
   UserPlus,
   X,
 } from 'lucide-react';
@@ -118,13 +117,6 @@ export default function Navbar({
               })}
             </div>
 
-            <Link
-              href="/admin"
-              className="hidden sm:inline-flex items-center gap-1 text-blue-100 hover:text-gold font-semibold transition-colors whitespace-nowrap"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              {dict.nav.adminPanel}
-            </Link>
           </div>
         </div>
       </div>
@@ -343,16 +335,6 @@ export default function Navbar({
               </Link>
             </>
           )}
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="min-h-[40px] inline-flex items-center gap-1.5 rounded-full bg-wa hover:bg-wa-dark text-white font-bold px-4 text-xs shadow-sm transition-colors whitespace-nowrap"
-          >
-            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="hidden xl:inline">{dict.nav.chatWhatsapp}</span>
-            <span className="xl:hidden">WA</span>
-          </a>
         </div>
 
         <button
@@ -519,25 +501,25 @@ export default function Navbar({
                 </Link>
               </div>
             )}
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-wa hover:bg-wa-dark text-white text-sm font-bold"
-            >
-              <MessageCircle className="h-4 w-4" aria-hidden="true" />
-              {dict.nav.chatWhatsappAdmin}
-            </a>
-            <Link
-              href="/admin"
-              onClick={() => setMobileOpen(false)}
-              className="w-full min-h-[44px] flex items-center justify-center rounded-lg border border-[#DCE6F5] text-ink text-sm font-semibold hover:bg-ice"
-            >
-              {dict.nav.adminDashboard}
-            </Link>
           </div>
         </nav>
       )}
+
+      {/* Floating WhatsApp button */}
+      <a
+        href={waUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={dict.nav.chatWhatsappAdmin}
+        title={dict.nav.chatWhatsappAdmin}
+        className="group fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 inline-flex items-center gap-2 rounded-full bg-wa hover:bg-wa-dark text-white font-bold shadow-lg shadow-black/20 h-14 pl-4 pr-4 sm:pr-5 transition-all hover:scale-105"
+      >
+        <span className="absolute inset-0 rounded-full bg-wa opacity-40 animate-ping pointer-events-none group-hover:hidden" aria-hidden="true" />
+        <MessageCircle className="relative h-6 w-6" aria-hidden="true" />
+        <span className="relative hidden sm:inline text-sm whitespace-nowrap">
+          {dict.nav.chatWhatsapp}
+        </span>
+      </a>
     </header>
   );
 }
