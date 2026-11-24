@@ -17,6 +17,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { buildWhatsAppUrl, formatIdr, formatNumberId } from '@/lib/format';
+import { getOptimizedImageUrl } from '@/lib/image';
 import type {
   CatalogCategory,
   CatalogProduct,
@@ -153,10 +154,14 @@ export default function CatalogClient({
         {/* Maritime Dark Navy Hero Banner for Catalog & LCL Consolidation */}
         <section className="relative overflow-hidden bg-navy text-white border-b border-navy-light">
           <img
-            src="/images/tracking-ship-banner.jpg"
+            src="/images/tracking-ship-banner.webp"
+            srcSet="/images/tracking-ship-banner-sm.webp 768w, /images/tracking-ship-banner.webp 1200w"
+            sizes="100vw"
             alt=""
             width={1200}
-            height={675}
+            height={670}
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-right opacity-45"
           />
           <div
@@ -368,9 +373,12 @@ export default function CatalogClient({
                         className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden block group"
                       >
                         <img
-                          src={product.image_url}
+                          src={getOptimizedImageUrl(product.image_url)}
                           alt={product.title}
+                          width={800}
+                          height={598}
                           loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                         />
                         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">

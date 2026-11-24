@@ -17,6 +17,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { buildWhatsAppUrl, formatIdr, formatNumberId } from '@/lib/format';
+import { getOptimizedImageUrl } from '@/lib/image';
 import type { CatalogProduct, LclBatch, PublicConfig } from '@/lib/types';
 import { useCustomerAuth } from './CustomerAuthProvider';
 import { useLanguage } from './LanguageProvider';
@@ -148,8 +149,12 @@ export default function CatalogDetailClient({
                 <div className="space-y-4">
                   <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-white border border-[#DCE6F5] shadow-sm">
                     <img
-                      src={product.image_url}
+                      src={getOptimizedImageUrl(product.image_url)}
                       alt={product.title}
+                      width={800}
+                      height={598}
+                      fetchPriority="high"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
@@ -441,9 +446,12 @@ export default function CatalogDetailClient({
                   >
                     <div className="aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden">
                       <img
-                        src={rel.image_url}
+                        src={getOptimizedImageUrl(rel.image_url)}
                         alt={rel.title}
+                        width={800}
+                        height={598}
                         loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                       />
                     </div>

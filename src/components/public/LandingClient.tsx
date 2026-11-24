@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { calculateImportEstimate } from '@/lib/calculator';
 import { formatIdr, formatNumberId } from '@/lib/format';
+import { getOptimizedImageUrl } from '@/lib/image';
 import {
   catalogProductToPrefill,
   lclBatchToPrefill,
@@ -231,11 +232,14 @@ export default function LandingClient({
         {/* HERO BANNER */}
         <section className="relative overflow-hidden bg-[#EFF5FF] border-b border-[#E2EAF6]">
           <img
-            src="/images/hero-port-pontianak.jpg"
+            src="/images/hero-port-pontianak.webp"
+            srcSet="/images/hero-port-pontianak-sm.webp 768w, /images/hero-port-pontianak.webp 1376w"
+            sizes="100vw"
             alt={dict.hero.imageAlt}
-            width={1600}
-            height={680}
+            width={1376}
+            height={768}
             fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-right"
           />
           <div
@@ -408,10 +412,14 @@ export default function LandingClient({
               {/* Left 7 cols: Cek Resi / Live Tracking Dark Banner Card */}
               <div className="lg:col-span-7 relative rounded-2xl overflow-hidden bg-navy text-white p-6 sm:p-8 flex flex-col justify-between min-h-[250px] shadow-md">
                 <img
-                  src="/images/tracking-ship-banner.jpg"
+                  src="/images/tracking-ship-banner.webp"
+                  srcSet="/images/tracking-ship-banner-sm.webp 768w, /images/tracking-ship-banner.webp 1200w"
+                  sizes="(max-width: 1024px) 100vw, 60vw"
                   alt=""
                   width={1200}
-                  height={675}
+                  height={670}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover object-right"
                 />
                 <div
@@ -534,19 +542,25 @@ export default function LandingClient({
                 </div>
 
                 <div className="pt-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     {liveScenarios.map((sc, idx) => (
                       <button
                         key={sc.id}
                         type="button"
                         aria-label={dict.scenarios.dotAria(idx + 1)}
+                        aria-current={idx === activeSlide ? 'true' : undefined}
                         onClick={() => setActiveSlide(idx)}
-                        className={`h-2 rounded-full transition-all ${
-                          idx === activeSlide
-                            ? 'w-5 bg-brand'
-                            : 'w-2 bg-[#CBD8EE] hover:bg-brand/60'
-                        }`}
-                      />
+                        className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`h-2 rounded-full transition-all ${
+                            idx === activeSlide
+                              ? 'w-5 bg-brand'
+                              : 'w-2 bg-[#CBD8EE] hover:bg-brand/60'
+                          }`}
+                        />
+                      </button>
                     ))}
                   </div>
 
@@ -638,9 +652,12 @@ export default function LandingClient({
                       className="relative aspect-[4/3] bg-[#F4F7FB] border-b border-[#E6EEF9] overflow-hidden block group"
                     >
                       <img
-                        src={item.image_url}
+                        src={getOptimizedImageUrl(item.image_url)}
                         alt={item.title}
+                        width={800}
+                        height={598}
                         loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
                       />
                       <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-navy/90 text-white shadow-sm">

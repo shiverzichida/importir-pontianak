@@ -274,7 +274,7 @@ export default function ExplainerSection({
         <audio
           ref={audioRef}
           src="/audio/explainer-cara-kerja-id.mp3"
-          preload="metadata"
+          preload="none"
           onEnded={() => {
             setIsPlaying(false);
             setCurrentSec(totalDuration);
@@ -288,8 +288,8 @@ export default function ExplainerSection({
               <video
                 controls
                 playsInline
-                preload="metadata"
-                poster="/images/hero-port-pontianak.jpg"
+                preload="none"
+                poster="/images/hero-port-pontianak.webp"
                 className="w-full aspect-video max-h-[540px] mx-auto bg-black"
                 src="/videos/explainer-cara-kerja-importir-pontianak.mp4"
               />
@@ -373,8 +373,12 @@ export default function ExplainerSection({
                       <div className="space-y-4">
                         <div className="relative rounded-2xl overflow-hidden border border-[#DCE6F5] shadow-md aspect-[16/9] max-h-[260px]">
                           <img
-                            src="/images/hero-port-pontianak.jpg"
+                            src="/images/hero-port-pontianak-sm.webp"
                             alt=""
+                            width={768}
+                            height={428}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-x-3 bottom-3 rounded-xl bg-navy/95 border border-gold/70 px-4 py-3 text-white shadow-lg">
@@ -475,17 +479,17 @@ export default function ExplainerSection({
                           <div className="grid grid-cols-3 gap-2">
                             {[
                               {
-                                img: '/images/catalog/coffee-barista-set.jpg',
+                                img: '/images/catalog/coffee-barista-set.webp',
                                 title: 'Barista Set',
                                 sub: '+150%',
                               },
                               {
-                                img: '/images/catalog/walet-mist-tweeter.jpg',
+                                img: '/images/catalog/walet-mist-tweeter.webp',
                                 title: 'Walet Kit',
                                 sub: '+180%',
                               },
                               {
-                                img: '/images/catalog/wpc-wall-panel.jpg',
+                                img: '/images/catalog/wpc-wall-panel.webp',
                                 title: 'WPC Panel',
                                 sub: 'LCL/FCL',
                               },
@@ -497,6 +501,10 @@ export default function ExplainerSection({
                                 <img
                                   src={c.img}
                                   alt={c.title}
+                                  width={800}
+                                  height={598}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="w-full aspect-square object-cover rounded-lg"
                                 />
                                 <div className="text-[11px] font-bold text-ink truncate">
@@ -679,8 +687,12 @@ export default function ExplainerSection({
 
                         <div className="sm:col-span-5 rounded-2xl overflow-hidden bg-navy text-white border border-gold/60 flex flex-col justify-between shadow-md">
                           <img
-                            src="/images/tracking-ship-banner.jpg"
+                            src="/images/tracking-ship-banner-sm.webp"
                             alt=""
+                            width={768}
+                            height={428}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-24 object-cover"
                           />
                           <div className="p-4 space-y-2.5">
@@ -868,7 +880,7 @@ export default function ExplainerSection({
                     className={`font-mono text-xs font-extrabold px-2.5 py-1 rounded-full ${
                       active
                         ? 'bg-gold text-ink'
-                        : 'bg-ice text-slate-500 border border-[#DCE6F5]'
+                        : 'bg-ice text-slate-700 border border-[#DCE6F5]'
                     }`}
                   >
                     0{idx + 1}

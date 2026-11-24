@@ -115,10 +115,14 @@ export default function TrackingWidget({
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
       <div className="relative rounded-2xl overflow-hidden bg-navy text-white p-6 sm:p-10 shadow-md">
         <img
-          src="/images/tracking-ship-banner.jpg"
+          src="/images/tracking-ship-banner.webp"
+          srcSet="/images/tracking-ship-banner-sm.webp 768w, /images/tracking-ship-banner.webp 1200w"
+          sizes="100vw"
           alt=""
           width={1200}
-          height={675}
+          height={670}
+          fetchPriority="high"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover object-right"
         />
         <div
